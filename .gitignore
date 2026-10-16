@@ -70,6 +70,12 @@ credentials*.json
 secrets*.json
 
 # Archivos del sistema y editor
+**/.state/
+**/.pytest_cache/
+**/.ruff_cache/
+config/entrada/
+*.exe
+*.dll
 Thumbs.db
 Desktop.ini
 .DS_Store

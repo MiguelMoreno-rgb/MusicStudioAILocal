@@ -1,5 +1,7 @@
 # Music Studio AI Local — diagnóstico documental y plan técnico
 
+> Antecedente de Etapa 0. La selección actual de dependencias y los BAT de instalación se describen en [PLAN_ETAPA1.md](PLAN_ETAPA1.md). Los problemas aquí identificados no deben interpretarse como el estado de validación de la nueva ruta, que aún requiere ejecución local.
+
 Consulta: 15 de octubre de 2026, America/Matamoros. Especificación principal: `Informe_IA_Musical_Local_RTX4060.pdf`, especialmente páginas 3, 4 y 9. Se aplican las etapas pedidas por el usuario: la generación queda en la etapa 2 y toda instalación requiere aprobar el diagnóstico. Las propuestas de experimentos posteriores del PDF no autorizan instalarlos ahora.
 
 **Dictamen: candidato adecuado para una prueba controlada, pero todavía NO aprobado para instalar.** La configuración de 8 GB tiene respaldo documental; faltan inventario real, revisión/tamaños de pesos y resolver la coherencia del stack Windows. Esta sesión corre en Linux en la nube, sin acceso a la laptop. No se presentan sus recursos como si fueran los del usuario.

@@ -1,0 +1,189 @@
+{
+  "schema": 1,
+  "code_commit": "ca1e85fe9430179831e6bc6be790c332190a3866",
+  "total_bytes_metadata": 7709383012,
+  "models": [
+    {
+      "repo": "ACE-Step/Ace-Step1.5",
+      "revision": "19671f406d603126926c1b7e2adc169acbcade22",
+      "license_metadata": "mit",
+      "prefix": "",
+      "files": [
+        {
+          "path": "Qwen3-Embedding-0.6B/added_tokens.json",
+          "bytes": 707,
+          "sha256": null,
+          "git_blob": "b54f9135e44c1e81047e8d05cb027af8bc039eed"
+        },
+        {
+          "path": "Qwen3-Embedding-0.6B/chat_template.jinja",
+          "bytes": 4116,
+          "sha256": null,
+          "git_blob": "699ff8df401fe4788525e9c1f9b86a99eadd6230"
+        },
+        {
+          "path": "Qwen3-Embedding-0.6B/config.json",
+          "bytes": 1359,
+          "sha256": null,
+          "git_blob": "21bd712c76114dc22587c6eeb84ab64186c9d245"
+        },
+        {
+          "path": "Qwen3-Embedding-0.6B/merges.txt",
+          "bytes": 1671853,
+          "sha256": null,
+          "git_blob": "31349551d90c7606f325fe0f11bbb8bd5fa0d7c7"
+        },
+        {
+          "path": "Qwen3-Embedding-0.6B/model.safetensors",
+          "bytes": 1191586416,
+          "sha256": "0437e45c94563b09e13cb7a64478fc406947a93cb34a7e05870fc8dcd48e23fd",
+          "git_blob": "9116264a405846ebfe4e95556b63b1ca07c892a0"
+        },
+        {
+          "path": "Qwen3-Embedding-0.6B/special_tokens_map.json",
+          "bytes": 613,
+          "sha256": null,
+          "git_blob": "ac23c0aaa2434523c494330aeb79c58395378103"
+        },
+        {
+          "path": "Qwen3-Embedding-0.6B/tokenizer.json",
+          "bytes": 11423705,
+          "sha256": "def76fb086971c7867b829c23a26261e38d9d74e02139253b38aeb9df8b4b50a",
+          "git_blob": "18a4abbf4a408dc534006a455544dcc195f356d2"
+        },
+        {
+          "path": "Qwen3-Embedding-0.6B/tokenizer_config.json",
+          "bytes": 5404,
+          "sha256": null,
+          "git_blob": "ddaf69808214a44fdd26d3785b66c1367c78277a"
+        },
+        {
+          "path": "Qwen3-Embedding-0.6B/vocab.json",
+          "bytes": 2776833,
+          "sha256": null,
+          "git_blob": "4783fe10ac3adce15ac8f358ef5462739852c569"
+        },
+        {
+          "path": "acestep-v15-turbo/config.json",
+          "bytes": 1968,
+          "sha256": null,
+          "git_blob": "6a0b5c09a654614302947fd1d7041f7ed0764d8c"
+        },
+        {
+          "path": "acestep-v15-turbo/configuration_acestep_v15.py",
+          "bytes": 13130,
+          "sha256": null,
+          "git_blob": "965a1b73afb1c89d0959c7d80691e487fdfde505",
+          "source_path": "acestep/models/turbo/configuration_acestep_v15.py",
+          "source_sha256": "5f15aa79fe793bba3c00b6992dd193a269954950603d5031ecd7703b0fa69da1"
+        },
+        {
+          "path": "acestep-v15-turbo/model.safetensors",
+          "bytes": 4787825604,
+          "sha256": "3f6e0797fad420a39bd33979eb6e840e30989e34a3794e843d23b60ec6e422d7",
+          "git_blob": "dd5858cb03b6587350e2c4abc4fd55c0ae7dc39b"
+        },
+        {
+          "path": "acestep-v15-turbo/modeling_acestep_v15_turbo.py",
+          "bytes": 96036,
+          "sha256": null,
+          "git_blob": "fa1162a5a01cc45c7959f3c531e2a8272ca05104",
+          "source_path": "acestep/models/turbo/modeling_acestep_v15_turbo.py",
+          "source_sha256": "71b22e01b490bd9e149e4c0c5da2e1f512126f3ab3316e0ae97779af84d19512"
+        },
+        {
+          "path": "acestep-v15-turbo/silence_latent.pt",
+          "bytes": 3841215,
+          "sha256": "a778e9dd942f5e8b2c09c55370782d318834432b03dabbcdf70e6ed49ad6358b",
+          "git_blob": "6b1e0f254e47f4f23ec505313d05e1d9fd09ae3e"
+        },
+        {
+          "path": "vae/config.json",
+          "bytes": 425,
+          "sha256": null,
+          "git_blob": "f49eb7b261dde15ed29c0fa1e790251dcecbd280"
+        },
+        {
+          "path": "vae/diffusion_pytorch_model.safetensors",
+          "bytes": 337431388,
+          "sha256": "da17edb604c40deaf09e9b24974e590d1ca83a374070e5d0884cfa4bed9a99b0",
+          "git_blob": "1b5eb1b18009ae7ad96c3bda6412517b68ec2bc2"
+        }
+      ]
+    },
+    {
+      "repo": "ACE-Step/acestep-5Hz-lm-0.6B",
+      "revision": "148d8ea0225bdab342ee1ae3a354275ccd60ca80",
+      "license_metadata": "mit",
+      "prefix": "acestep-5Hz-lm-0.6B",
+      "files": [
+        {
+          "path": ".gitattributes",
+          "bytes": 1628,
+          "sha256": null,
+          "git_blob": "744ea4af9d05a1d2de292e5b0d3eae6441c064dc"
+        },
+        {
+          "path": "README.md",
+          "bytes": 5498,
+          "sha256": null,
+          "git_blob": "09b1e911e95bb4543e08bfa19ad93bf53e2bc05f"
+        },
+        {
+          "path": "added_tokens.json",
+          "bytes": 2217787,
+          "sha256": null,
+          "git_blob": "584075018edeacd6dcc031b3e2cbbf90836eba41"
+        },
+        {
+          "path": "chat_template.jinja",
+          "bytes": 4168,
+          "sha256": null,
+          "git_blob": "01be9b307daa2d425f7c168c9fb145a286e0afb4"
+        },
+        {
+          "path": "config.json",
+          "bytes": 1386,
+          "sha256": null,
+          "git_blob": "6353b68df0e93bfec5764e42ede605552ec54116"
+        },
+        {
+          "path": "merges.txt",
+          "bytes": 1671853,
+          "sha256": null,
+          "git_blob": "31349551d90c7606f325fe0f11bbb8bd5fa0d7c7"
+        },
+        {
+          "path": "model.safetensors",
+          "bytes": 1325804024,
+          "sha256": "5d92a60806e2e88c04de58ddc6dde93f2bc8f1336162b3ad5853886c9bcc6b82",
+          "git_blob": "032c4b6785a447ebd085dc4cfa42ec6dce3f9e9f"
+        },
+        {
+          "path": "special_tokens_map.json",
+          "bytes": 1824199,
+          "sha256": null,
+          "git_blob": "aa26266349a0f38be608e07138c9047356309551"
+        },
+        {
+          "path": "tokenizer.json",
+          "bytes": 24321939,
+          "sha256": "35af56c3f5cb3ea2cc578aa28a8937770981d504f183ac5c8c38baf4bbd4af4d",
+          "git_blob": "9ddbbfa4ab39a70635bbde85a4cb422afeae7d88"
+        },
+        {
+          "path": "tokenizer_config.json",
+          "bytes": 14072925,
+          "sha256": "6cd70cdd89425971794f5235562edcc608b0629a6c4686ae51a8b8c8b8ba5e95",
+          "git_blob": "b24427adb48675a5389bd54813b4e63f1b7127f8"
+        },
+        {
+          "path": "vocab.json",
+          "bytes": 2776833,
+          "sha256": null,
+          "git_blob": "4783fe10ac3adce15ac8f358ef5462739852c569"
+        }
+      ]
+    }
+  ]
+}

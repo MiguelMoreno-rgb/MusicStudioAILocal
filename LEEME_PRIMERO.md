@@ -1,5 +1,7 @@
 # Music Studio AI Local — etapa 0
 
+> Para la instalación aislada autorizada después del diagnóstico, consulta [PLAN_ETAPA1.md](PLAN_ETAPA1.md) y el [README](README.md). Los BAT descritos aquí siguen siendo solo de diagnóstico.
+
 Este paquete prepara el diagnóstico. No instala Python, PyTorch, ACE-Step, controladores ni modelos. No genera música y no contiene una página web.
 
 1. Extrae TODO el ZIP en una carpeta local con permiso de escritura. Preferiblemente en el disco donde quieras instalar el proyecto más adelante; por ejemplo `D:\MusicStudioAI_Diagnostico`. No lo extraigas dentro de KickClipAI, Ollama o ComfyUI. No ejecutes los BAT directamente dentro del ZIP.
