@@ -14,6 +14,7 @@ from .common import CHECKPOINTS, ROOT, enable_source, ffmpeg_bin, isolate, read_
 from .models import validate_configs, verify_models
 from .memory_trace import MemoryTrace
 from .streaming_offload import StreamingOffloadMixin
+from .text_encoder_memory import TextEncoderCPUOffloadMixin
 
 
 def perform(request, run, trace):
@@ -53,7 +54,7 @@ def perform(request, run, trace):
     torch.cuda.set_per_process_memory_fraction(budget / total, 0)
     torch.cuda.reset_peak_memory_stats(0)
 
-    class SmallModelHandler(StreamingOffloadMixin, AceStepHandler):
+    class SmallModelHandler(StreamingOffloadMixin, TextEncoderCPUOffloadMixin, AceStepHandler):
         def _ensure_models_present(self, *, checkpoint_path, config_path, prefer_source, vae_variant=None):
             # Upstream requires an unused LM 1.7B as part of "main". This integration
             # checks only the three core components, already hash-verified above.

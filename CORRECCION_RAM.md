@@ -1,5 +1,7 @@
 # RAM: transferencia INT8 y diagnóstico por operación
 
+La tercera prueba real encontró un desperdicio separado en el encoder Qwen FP32 de CPU. La propuesta de carga BF16 directa y sus límites están en [INVESTIGACION_RAM_TERCERA_PRUEBA.md](INVESTIGACION_RAM_TERCERA_PRUEBA.md); aún requiere validación en Windows.
+
 **Actualización de telemetría:** si Windows rechaza publicar el marcador, consulta [CORRECCION_TELEMETRIA_WINDOWS.md](CORRECCION_TELEMETRIA_WINDOWS.md). La publicación actual usa diarios append-only; consulta [la corrección validable en Windows](CORRECCION_WINDOWS_APPEND.md). Un rechazo de telemetría no aborta por sí solo la toma.
 
 ## Lo que sabemos de la primera prueba
