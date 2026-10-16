@@ -54,7 +54,7 @@ def supervise(request_path):
     peak_private = None
     peak_commit = None
     with (run / "consola.log").open("w", encoding="utf-8") as log, (run / "memoria.csv").open("w", newline="", encoding="utf-8") as memory:
-        writer = csv.DictWriter(memory, fieldnames=["elapsed_s", "process_rss_bytes", "process_private_bytes", "process_vms_bytes", "process_page_faults", "system_available_bytes", "system_total_bytes", "system_commit_bytes", "system_commit_limit_bytes", "system_commit_peak_bytes", "commit_sampling_error", "system_swap_used_bytes", "worker_event_sequence", "worker_operation", "worker_event", "gpu0_used_mib", "gpu0_free_mib", "gpu_sampling_error", "gpu_sample_age_s"])
+        writer = csv.DictWriter(memory, fieldnames=["elapsed_s", "process_rss_bytes", "process_private_bytes", "process_vms_bytes", "process_page_faults", "system_available_bytes", "system_total_bytes", "system_commit_bytes", "system_commit_limit_bytes", "system_commit_peak_bytes", "commit_sampling_error", "system_swap_used_bytes", "worker_event_sequence", "worker_operation", "worker_event", "worker_telemetry_read_error", "gpu0_used_mib", "gpu0_free_mib", "gpu_sampling_error", "gpu_sample_age_s"])
         writer.writeheader()
         child = subprocess.Popen([sys.executable, "-I", "-B", str(ROOT / "instalacion/ejecutar.py"), "worker", str(run / "solicitud.json"), str(run)], cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace", bufsize=1)
         # Drain logs concurrently so long native output cannot deadlock a full pipe.
@@ -92,7 +92,8 @@ def supervise(request_path):
                 except psutil.NoSuchProcess:
                     break
                 minimum_ram = min(minimum_ram, measurement["system_available_bytes"] / 1024**3)
-                event = last_event(run)
+                event_io = {}
+                event = last_event(run, diagnostics=event_io)
                 for field, current in (("process_private_bytes", peak_private), ("system_commit_bytes", peak_commit)):
                     value = measurement[field]
                     if value is not None:
@@ -103,6 +104,7 @@ def supervise(request_path):
                            worker_event_sequence=event.get("sequence") if event else None,
                            worker_operation=event.get("operation") if event else None,
                            worker_event=event.get("event") if event else None,
+                           worker_telemetry_read_error=json.dumps(event_io) if event_io else "",
                            gpu0_used_mib="", gpu0_free_mib="", gpu_sampling_error="Muestra GPU pendiente")
                 with gpu_lock:
                     cached = dict(gpu_latest)

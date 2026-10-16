@@ -1,5 +1,7 @@
 # RAM: transferencia INT8 y diagnóstico por operación
 
+**Actualización de telemetría:** si Windows rechaza publicar el marcador, consulta [CORRECCION_TELEMETRIA_WINDOWS.md](CORRECCION_TELEMETRIA_WINDOWS.md). El marcador es ahora una caché recuperable y el supervisor también consulta el diario; un rechazo de telemetría no aborta por sí solo la toma.
+
 ## Lo que sabemos de la primera prueba
 
 Windows/RTX 4060 Laptop 8 GB, RAM 16 GB, Python privado 3.12.12, PyTorch 2.10.0+cu128, TorchAO 0.16.0. Turbo 2B, sin LM, INT8, offload CPU/DiT, 30 segundos, 8 pasos y batch 1. El monitor informó 6.1 GiB disponibles inicialmente, mínimo 0.262 GiB y 33.46 segundos hasta detenerla por tres muestras bajo 1 GiB.
