@@ -1,0 +1,49 @@
+{
+  "commit_acestep": "ca1e85fe9430179831e6bc6be790c332190a3866",
+  "consulted_utc_date": "2026-10-16",
+  "code_version": "1.5.0",
+  "source_files_only": true,
+  "model_weights_downloaded": false,
+  "installed_packages": false,
+  "windows_scripts_executed": false,
+  "pending": [
+    "Windows hardware inventory",
+    "Hugging Face model revisions and byte sizes",
+    "Checkpoint config/code compatibility",
+    "Coherent Windows dependency stack"
+  ],
+  "network_observations": {
+    "raw.githubusercontent.com": "success",
+    "github_git_ls_remote": "success",
+    "api.github.com": "HTTP 403",
+    "huggingface.co": "proxy CONNECT HTTP 403",
+    "docs.nvidia.com": "HTTP 403"
+  },
+  "sources": {
+    "fuentes/INSTALL.md": "https://raw.githubusercontent.com/ace-step/ACE-Step-1.5/ca1e85fe9430179831e6bc6be790c332190a3866/docs/en/INSTALL.md",
+    "fuentes/init_service_setup.py": "https://raw.githubusercontent.com/ace-step/ACE-Step-1.5/ca1e85fe9430179831e6bc6be790c332190a3866/acestep/core/generation/handler/init_service_setup.py",
+    "fuentes/model_downloader.py": "https://raw.githubusercontent.com/ace-step/ACE-Step-1.5/ca1e85fe9430179831e6bc6be790c332190a3866/acestep/model_downloader.py",
+    "fuentes/inference.py": "https://raw.githubusercontent.com/ace-step/ACE-Step-1.5/ca1e85fe9430179831e6bc6be790c332190a3866/acestep/inference.py",
+    "fuentes/pyproject.toml": "https://raw.githubusercontent.com/ace-step/ACE-Step-1.5/ca1e85fe9430179831e6bc6be790c332190a3866/pyproject.toml",
+    "fuentes/GPU_TROUBLESHOOTING.md": "https://raw.githubusercontent.com/ace-step/ACE-Step-1.5/ca1e85fe9430179831e6bc6be790c332190a3866/docs/en/GPU_TROUBLESHOOTING.md",
+    "fuentes/init_service.py": "https://raw.githubusercontent.com/ace-step/ACE-Step-1.5/ca1e85fe9430179831e6bc6be790c332190a3866/acestep/core/generation/handler/init_service.py",
+    "fuentes/torchcodec-README.md": "https://raw.githubusercontent.com/pytorch/torchcodec/main/README.md",
+    "fuentes/init_service_loader.py": "https://raw.githubusercontent.com/ace-step/ACE-Step-1.5/ca1e85fe9430179831e6bc6be790c332190a3866/acestep/core/generation/handler/init_service_loader.py",
+    "fuentes/GPU_COMPATIBILITY.md": "https://raw.githubusercontent.com/ace-step/ACE-Step-1.5/ca1e85fe9430179831e6bc6be790c332190a3866/docs/en/GPU_COMPATIBILITY.md",
+    "fuentes/torchao-v0.16.0-init.py": "https://raw.githubusercontent.com/pytorch/ao/v0.16.0/torchao/__init__.py",
+    "fuentes/handler.py": "https://raw.githubusercontent.com/ace-step/ACE-Step-1.5/ca1e85fe9430179831e6bc6be790c332190a3866/acestep/handler.py",
+    "fuentes/handler_init.py": "https://raw.githubusercontent.com/ace-step/ACE-Step-1.5/ca1e85fe9430179831e6bc6be790c332190a3866/acestep/core/generation/handler/__init__.py",
+    "fuentes/torchao-README.md": "https://raw.githubusercontent.com/pytorch/ao/main/README.md",
+    "fuentes/torchcodec-v0.10.0-README.md": "https://raw.githubusercontent.com/pytorch/torchcodec/v0.10.0/README.md",
+    "fuentes/gpu_config.py": "https://raw.githubusercontent.com/ace-step/ACE-Step-1.5/ca1e85fe9430179831e6bc6be790c332190a3866/acestep/gpu_config.py",
+    "fuentes/init_service_orchestrator.py": "https://raw.githubusercontent.com/ace-step/ACE-Step-1.5/ca1e85fe9430179831e6bc6be790c332190a3866/acestep/core/generation/handler/init_service_orchestrator.py",
+    "fuentes/llm_inference.py": "https://raw.githubusercontent.com/ace-step/ACE-Step-1.5/ca1e85fe9430179831e6bc6be790c332190a3866/acestep/llm_inference.py",
+    "fuentes/nano-pyproject.toml": "https://raw.githubusercontent.com/ace-step/ACE-Step-1.5/ca1e85fe9430179831e6bc6be790c332190a3866/acestep/third_parts/nano-vllm/pyproject.toml",
+    "fuentes/README.md": "https://raw.githubusercontent.com/ace-step/ACE-Step-1.5/ca1e85fe9430179831e6bc6be790c332190a3866/README.md",
+    "fuentes/uv.lock": "https://raw.githubusercontent.com/ace-step/ACE-Step-1.5/ca1e85fe9430179831e6bc6be790c332190a3866/uv.lock",
+    "fuentes/torchao-v0.16.0-README.md": "https://raw.githubusercontent.com/pytorch/ao/v0.16.0/README.md",
+    "fuentes/LICENCIAS/ACE-Step-MIT.txt": "https://raw.githubusercontent.com/ace-step/ACE-Step-1.5/ca1e85fe9430179831e6bc6be790c332190a3866/LICENSE",
+    "fuentes/LICENCIAS/TorchAO-BSD.txt": "https://raw.githubusercontent.com/pytorch/ao/v0.16.0/LICENSE",
+    "fuentes/LICENCIAS/TorchCodec-BSD.txt": "https://raw.githubusercontent.com/pytorch/torchcodec/v0.10.0/LICENSE"
+  }
+}

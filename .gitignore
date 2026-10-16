@@ -1,0 +1,77 @@
+# Informes personales y resultados de inventario/generación
+**/resultados/
+**/results/
+**/outputs/
+**/logs/
+**/diagnostico.json
+**/RESUMEN.txt
+**/manifest-modelos.json
+*.log
+*.csv
+*.jsonl
+
+# Modelos y checkpoints: nunca versionar pesos
+**/checkpoints/
+**/models/
+**/modelos/
+*.safetensors
+*.ckpt
+*.gguf
+*.ggml
+*.pt
+*.pth
+*.bin
+*.onnx
+
+# Python y runtimes exclusivos del equipo
+**/.venv/
+**/venv/
+**/env/
+**/.runtime/
+**/python_embedded/
+**/__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Descargas, cachés, temporales y herramientas locales
+**/.cache/
+**/cache/
+**/.hf/
+**/.torch/
+**/.uv/
+**/tmp/
+**/temp/
+**/downloads/
+**/vendor/
+*.part
+*.incomplete
+*.zip
+*.7z
+*.tar
+*.tar.gz
+*.whl
+
+# Audio y video generados o aportados como referencia
+*.wav
+*.mp3
+*.flac
+*.ogg
+*.m4a
+*.aac
+*.mp4
+
+# Configuración privada y credenciales
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials*.json
+secrets*.json
+
+# Archivos del sistema y editor
+Thumbs.db
+Desktop.ini
+.DS_Store
+.idea/
+.vscode/
