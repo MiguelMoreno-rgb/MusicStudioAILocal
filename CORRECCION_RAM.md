@@ -1,6 +1,6 @@
 # RAM: transferencia INT8 y diagnóstico por operación
 
-**Actualización de telemetría:** si Windows rechaza publicar el marcador, consulta [CORRECCION_TELEMETRIA_WINDOWS.md](CORRECCION_TELEMETRIA_WINDOWS.md). El marcador es ahora una caché recuperable y el supervisor también consulta el diario; un rechazo de telemetría no aborta por sí solo la toma.
+**Actualización de telemetría:** si Windows rechaza publicar el marcador, consulta [CORRECCION_TELEMETRIA_WINDOWS.md](CORRECCION_TELEMETRIA_WINDOWS.md). La publicación actual usa diarios append-only; consulta [la corrección validable en Windows](CORRECCION_WINDOWS_APPEND.md). Un rechazo de telemetría no aborta por sí solo la toma.
 
 ## Lo que sabemos de la primera prueba
 

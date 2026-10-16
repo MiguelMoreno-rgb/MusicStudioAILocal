@@ -10,7 +10,7 @@ Configuración: DiT 2B Turbo, LM musical 0.6B opcional, backend PyTorch (`pt`), 
 
 **Si `08_REPARAR_TRASLADO.bat` se detuvo en «script no reconocido: numba»:** sigue [estos pasos de actualización de solo dos archivos](REPARAR_TRASLADO.md#si-la-reparación-se-detuvo-en-numba). No reinstales paquetes ni sustituyas `.venv` o `.runtime`.
 
-**Si aparece WinError 5 en `memoria-ultima-etapa.json`:** aplica la [corrección de telemetría Windows](CORRECCION_TELEMETRIA_WINDOWS.md) mediante el actualizador. Corrige la compartición de lectores y evita abortar por un rechazo recuperable del marcador, manteniendo el monitor de RAM.
+**Si aparece WinError 5 en `memoria-ultima-etapa.json`:** aplica la [publicación append-only para Windows](CORRECCION_WINDOWS_APPEND.md) mediante el actualizador. Elimina los reemplazos del marcador y añade **09_VALIDAR_TELEMETRIA_WINDOWS.bat** para aceptación nativa sin modelos ni música. La aceptación en tu Windows sigue pendiente hasta ejecutar ese BAT.
 
 **Si la primera generación fue detenida por RAM baja:** lee [CORRECCION_RAM.md](CORRECCION_RAM.md). La actualización elimina el intento redundante de transferencia INT8 y añade trazas de memoria por operación; no acredita aún que la toma quepa en tu laptop. Actualiza el código y revisemos antes de ejecutar otra generación.
 

@@ -8,7 +8,6 @@ from functools import lru_cache
 import os
 from pathlib import Path
 import sys
-import tempfile
 import threading
 import time
 
@@ -67,8 +66,11 @@ def sample_memory(process=None, include_cuda=False):
     return row
 
 
+CHECKPOINT = 'memoria-ultima-etapa.jsonl'
+
+
 class MemoryTrace:
-    """Single worker writer, serialized across threads; marker is a cache.
+    """Single worker writer, serialized across threads; append-only checkpoints.
 
     I/O errors degrade telemetry visibly, never suppress the RAM guard or a
     model exception. Pending events are bounded: no unbounded RAM logging queue.
@@ -86,7 +88,9 @@ class MemoryTrace:
         self._pending = deque()
         self._pending_bytes = 0
         self._journal_dirty = False
-        self._next_journal = self._next_marker = self._last_sync = 0
+        self._next_journal = self._next_checkpoint = self._last_sync = 0
+        self._checkpoint_dirty = False
+        self._checkpoint_sync = 0
         self._errors = 0
         self._dropped = 0
         self._last_error = None
@@ -151,45 +155,30 @@ class MemoryTrace:
                 return
         self._next_journal = 0
 
-    def _publish_marker(self, line):
-        if time.monotonic() < self._next_marker:
+    def _publish_checkpoint(self, entry, force=False):
+        """Append without renaming, replacing, truncating or deleting any file.
+
+        The main journal is authoritative. This independent stream preserves
+        a recent event when the main append is temporarily unavailable.
+        """
+        now = time.monotonic()
+        if not force and now < self._next_checkpoint:
             return
-        temporary = None
-        fd = None
         try:
-            # mkstemp is exclusive. Close our own handle BEFORE replace on Windows.
-            fd, name = tempfile.mkstemp(prefix='.memoria-ultima-etapa-', suffix='.tmp', dir=self.run)
-            temporary = Path(name)
-            stream = os.fdopen(fd, 'w', encoding='utf-8')
-            fd = None  # stream now owns it, including on write failure.
-            with stream as f:
-                f.write(line)
+            with (self.run / CHECKPOINT).open('a', encoding='utf-8') as f:
+                if self._checkpoint_dirty:
+                    f.write('\n')  # Do not concatenate onto a failed partial record.
+                f.write(json.dumps(entry, ensure_ascii=True)+'\n')
                 f.flush()
-            for attempt in range(3):
-                try:
-                    temporary.replace(self.run / 'memoria-ultima-etapa.json')
-                    self._next_marker = 0
-                    return
-                except OSError as exc:
-                    transient = isinstance(exc, PermissionError) or getattr(exc, 'winerror', None) in (5, 32, 33)
-                    if not transient or attempt == 2:
-                        raise
-                    self._problem('marker.retry', exc)
-                    time.sleep(.01 * (attempt+1))
+                if force or now-self._checkpoint_sync >= 1:
+                    os.fsync(f.fileno())
+                    self._checkpoint_sync = now
+            self._checkpoint_dirty = False
+            self._next_checkpoint = 0
         except OSError as exc:
-            self._next_marker = time.monotonic() + 1
-            self._problem('marker.publish', exc)
-        finally:
-            if fd is not None:
-                try:
-                    os.close(fd)
-                except OSError as exc:
-                    self._problem("marker.close", exc)
-            if temporary is not None:
-                try:
-                    temporary.unlink(missing_ok=True)
-                except OSError as exc:
-                    self._problem('marker.cleanup', exc)  # Never delete another writer's temp.
+            self._checkpoint_dirty = True
+            self._next_checkpoint = now + .25
+            self._problem('checkpoint.append', exc)
 
     def emit(self, operation, event, **details):
         with self._lock:
@@ -214,8 +203,8 @@ class MemoryTrace:
             force = event == 'error' or operation == 'worker' and event == 'end'
             self._flush_journal(force=force)
             entry['telemetry'] = self._health()
-            self._publish_marker(json.dumps(entry, ensure_ascii=True)+'\n')
-            # Return status after marker failure as well; later records persist it.
+            self._publish_checkpoint(entry, force=force)
+            # Return status after a checkpoint append failure too.
             entry['telemetry'] = self._health()
             return entry
 
@@ -237,7 +226,10 @@ class MemoryTrace:
 
 @contextmanager
 def _open_shared(path):
-    """Windows readers explicitly permit replacement/deletion while open."""
+    """Readers share read/write; DELETE is retained for legacy-file compatibility.
+
+    New telemetry appends never require rename/delete access to this handle.
+    """
     if os.name != 'nt':
         with Path(path).open('rb') as stream:
             yield stream
@@ -273,10 +265,10 @@ def _open_shared(path):
 
 
 def last_event(run, diagnostics=None):
-    """Bounded reads, tolerate incomplete JSONL tail and a blocked/stale cache."""
+    """Bounded tail reads, newline commits; legacy JSON is read-only fallback."""
     candidates = []
     diagnostics = diagnostics if diagnostics is not None else {}
-    for filename, journal in (('memoria-eventos.jsonl', True), ('memoria-ultima-etapa.json', False)):
+    for priority, (filename, journal) in enumerate((('memoria-ultima-etapa.json', False), ('memoria-eventos.jsonl', True), (CHECKPOINT, True))):
         try:
             with _open_shared(Path(run) / filename) as stream:
                 if journal:
@@ -299,14 +291,14 @@ def last_event(run, diagnostics=None):
                 except (ValueError, UnicodeError):
                     continue
                 if isinstance(value, dict) and isinstance(value.get('sequence'), int):
-                    candidates.append(value)
+                    candidates.append((value["sequence"], priority, value))
                     break
         except FileNotFoundError:
             continue  # Normal before the worker has emitted its first event.
         except OSError as exc:
             diagnostics[filename] = repr(exc)
             continue  # Visible to parent CSV; RAM sampling stays independent.
-    return max(candidates, key=lambda v:v['sequence']) if candidates else None
+    return max(candidates, key=lambda v:v[:2])[2] if candidates else None
 
 
 class LowMemoryGuard:

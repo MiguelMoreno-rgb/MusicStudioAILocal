@@ -1,5 +1,7 @@
 # WinError 5 al publicar el marcador de memoria
 
+**Documento histórico de 08144b2.** La validación real de Windows refutó la garantía de reemplazo con destino abierto descrita aquí. La estrategia actual y el BAT de aceptación están en [CORRECCION_WINDOWS_APPEND.md](CORRECCION_WINDOWS_APPEND.md); ahora se publica por append, sin reemplazar el JSON antiguo.
+
 ## Diagnóstico y alcance
 
 La segunda prueba terminó en `memory_trace.py`, al reemplazar `memoria-ultima-etapa.json`, mientras registraba la transferencia de `decoder.layers.3.self_attn.k_proj.weight`. **Es una excepción de E/S de telemetría, no evidencia de un peso defectuoso, fallo del kernel INT8 ni una nueva falta de RAM.** No se atribuye a OneDrive: estaba pausado y la traza no identifica al proceso que denegó el acceso.
