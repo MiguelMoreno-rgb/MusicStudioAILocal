@@ -52,6 +52,7 @@ Fuente técnica del formato: [Launcher y with_python_path de uv 0.9.6](https://g
    | `musicstudio/relocate.py` | Añadir |
    | `musicstudio/validate.py` | Copiar la versión corregida INT8 |
    | `musicstudio/int8_offload.py` | Copiar el helper de validación INT8 |
+   | `musicstudio/streaming_offload.py` | Copiar el helper optimizado requerido por la validación actual |
 
    No copies, borres ni recrees `.venv`, `.runtime`, `.cache`, `.state`, `checkpoints` o `resultados`. La herramienta actualizará internamente solo las referencias controladas que autorices. Los otros archivos del ZIP son documentación/pruebas; no necesitas copiarlos para ejecutar el arreglo. Si informa que `musicstudio/common.py` o `instalacion/ejecutar.py` difieren de la versión esperada, conserva el mensaje: son código propio del proyecto y pueden actualizarse desde el ZIP tras revisar tus cambios; no se sobrescriben automáticamente.
 

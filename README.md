@@ -10,6 +10,8 @@ Configuración: DiT 2B Turbo, LM musical 0.6B opcional, backend PyTorch (`pt`), 
 
 **Si `08_REPARAR_TRASLADO.bat` se detuvo en «script no reconocido: numba»:** sigue [estos pasos de actualización de solo dos archivos](REPARAR_TRASLADO.md#si-la-reparación-se-detuvo-en-numba). No reinstales paquetes ni sustituyas `.venv` o `.runtime`.
 
+**Si la primera generación fue detenida por RAM baja:** lee [CORRECCION_RAM.md](CORRECCION_RAM.md). La actualización elimina el intento redundante de transferencia INT8 y añade trazas de memoria por operación; no acredita aún que la toma quepa en tu laptop. Actualiza el código y revisemos antes de ejecutar otra generación.
+
 ## Actualizar tu instalación existente sin ZIP
 
 Si ya tienes Python privado y los 57 paquetes, configura una sola vez la [actualización directa desde GitHub](ACTUALIZACIONES.md#primera-vez-un-comando-de-powershell): un comando de PowerShell descarga el configurador de un commit concreto, verifica SHA256 y pide revisión/confirmación antes de ejecutarlo. Funciona aunque la reparación de `.venv` siga pendiente.

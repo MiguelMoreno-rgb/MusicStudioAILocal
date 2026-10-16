@@ -65,6 +65,8 @@ def run_checks(run):
     # Match ACE-Step's actual offload path, including its AQT dispatch fallback.
     # Raw Module.to() under inference_mode is not the transfer API of this commit.
     int8_report = exercise_int8_offload("cuda", cycles=2)
+    from .streaming_offload import move_streaming
+    streaming_report = exercise_int8_offload("cuda", cycles=2, transfer=move_streaming)
     torch.cuda.synchronize()
     # Actual DLL/codec decode test using a local diagnostic sine, not generated music.
     import numpy as np
@@ -92,7 +94,7 @@ def run_checks(run):
     torch.cuda.empty_cache()
     return dict(versions=versions, python=platform.python_version(), cuda=torch.version.cuda,
                 gpu=torch.cuda.get_device_name(0), gpu_inventory=nvidia_inventory(),
-                int8_forward_and_offload=True, int8_offload=int8_report, codec_decode=True, mp3_export=True,
+                int8_forward_and_offload=True, int8_offload=int8_report, streaming_int8_offload=streaming_report, codec_decode=True, mp3_export=True,
                 source_commit=read_json(ROOT / "instalacion/bootstrap.lock.json")["source"]["commit"],
                 requirements_sha256=sha256(ROOT / "instalacion/requirements-windows.lock.txt"),
                 status="LOCAL_ENVIRONMENT_CHECKS_PASSED_NOT_MODEL_GENERATION")

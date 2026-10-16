@@ -71,11 +71,12 @@ def move_checked(host, model, device, dtype=None):
     return assert_int8_device(model, device)
 
 
-def exercise_int8_offload(device="cuda", cycles=2):
+def exercise_int8_offload(device="cuda", cycles=2, transfer=None):
     """Tiny real forward + round trips inside inference_mode; no musical weights."""
     import torch
     from torchao.quantization import Int8WeightOnlyConfig, quantize_
     host = make_offload_host()
+    transfer = transfer or move_checked
     model = torch.nn.Sequential(torch.nn.Linear(64, 64, bias=True)).eval().to(dtype=torch.bfloat16)
     model.register_buffer("offload_probe", torch.zeros(1))
     sample_cpu = torch.randn(4, 64, dtype=torch.bfloat16)
@@ -88,20 +89,22 @@ def exercise_int8_offload(device="cuda", cycles=2):
     errors = []
     with torch.inference_mode():
         for _ in range(cycles):
-            move_checked(host, model, device, torch.bfloat16)
+            transfer(host, model, device, torch.bfloat16)
+            assert_int8_device(model, device)
             output = model(sample_cpu.to(device)).float().cpu()
             if not torch.isfinite(output).all().item():
                 raise RuntimeError("Forward INT8 no finito despues de la carga al dispositivo.")
             torch.testing.assert_close(output, reference, rtol=0.10, atol=0.05)
             errors.append(float((output - reference).abs().max().item()))
-            move_checked(host, model, "cpu")
+            transfer(host, model, "cpu")
+            assert_int8_device(model, "cpu")
             if not torch.equal(model[0].weight.tensor_impl.int_data, original_int8):
                 raise RuntimeError("Los bytes INT8 cambiaron durante el offload.")
             if not torch.equal(model[0].weight.tensor_impl.scale, original_scale):
                 raise RuntimeError("Las escalas INT8 cambiaron durante el offload.")
             if not torch.isfinite(model(sample_cpu)).all().item():
                 raise RuntimeError("Forward en CPU no finito despues del offload.")
-    return dict(transfer_method="ACE-Step._recursive_to_device", inference_mode=True,
+    return dict(transfer_method="ACE-Step._recursive_to_device" if transfer is move_checked else transfer.__name__, inference_mode=True,
                 quantization="Int8WeightOnlyConfig(version=1)", cycles=cycles,
                 tested_device=str(device), effective_int8_layers=assert_int8_device(model, "cpu"),
                 integer_storage_and_scales_preserved=True, max_absolute_errors=errors)

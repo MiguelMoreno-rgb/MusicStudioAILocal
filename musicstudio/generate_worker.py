@@ -12,9 +12,12 @@ import traceback
 
 from .common import CHECKPOINTS, ROOT, enable_source, ffmpeg_bin, isolate, read_json, sha256, write_json
 from .models import validate_configs, verify_models
+from .memory_trace import MemoryTrace
+from .streaming_offload import StreamingOffloadMixin
 
 
-def perform(request, run):
+def perform(request, run, trace):
+    trace.emit("worker.preparation", "begin")
     isolate()
     os.environ.update(HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1")
     enable_source()
@@ -34,8 +37,9 @@ def perform(request, run):
         raise RuntimeError("cuda:0 no corresponde a la RTX 4060 esperada.")
     started = time.perf_counter()
     use_lm = request["use_lm"]
-    verify_models(use_lm)
-    checkpoint_config = validate_configs(use_lm)
+    with trace.span("checkpoints.verify"):
+        verify_models(use_lm)
+        checkpoint_config = validate_configs(use_lm)
     random.seed(request["seed"])
     np.random.seed(request["seed"])
     torch.manual_seed(request["seed"])
@@ -49,7 +53,7 @@ def perform(request, run):
     torch.cuda.set_per_process_memory_fraction(budget / total, 0)
     torch.cuda.reset_peak_memory_stats(0)
 
-    class SmallModelHandler(AceStepHandler):
+    class SmallModelHandler(StreamingOffloadMixin, AceStepHandler):
         def _ensure_models_present(self, *, checkpoint_path, config_path, prefer_source, vae_variant=None):
             # Upstream requires an unused LM 1.7B as part of "main". This integration
             # checks only the three core components, already hash-verified above.
@@ -62,13 +66,16 @@ def perform(request, run):
             return None
 
     dit = SmallModelHandler()
+    dit.memory_trace = trace
+    trace.emit("worker.preparation", "end")
     timings = {"preparacion_s": time.perf_counter() - started}
     init_start = time.perf_counter()
-    status, ok = dit.initialize_service(
-        project_root=str(ROOT), config_path="acestep-v15-turbo", device="cuda",
-        use_flash_attention=False, compile_model=False, quantization="int8_weight_only",
-        offload_to_cpu=True, offload_dit_to_cpu=True, use_mlx_dit=False,
-    )
+    with trace.span("initialize.dit_vae_encoder"):
+        status, ok = dit.initialize_service(
+            project_root=str(ROOT), config_path="acestep-v15-turbo", device="cuda",
+            use_flash_attention=False, compile_model=False, quantization="int8_weight_only",
+            offload_to_cpu=True, offload_dit_to_cpu=True, use_mlx_dit=False,
+        )
     print(status, flush=True)
     if not ok:
         raise RuntimeError("No se pudo cargar DiT: " + status)
@@ -107,9 +114,23 @@ def perform(request, run):
         pytorch_allocator_budget_bytes=int(budget), gpu=torch.cuda.get_device_name(0),
         note="El limite del allocator no incluye todas las asignaciones CUDA ni procesos ajenos.",
     )
+    # Runtime wrappers only: source hashes remain unchanged. Record the two
+    # distinct engine operations after load, without logging prompt/lyrics.
+    from functools import wraps
+    for method_name in ("prepare_condition", "generate_audio"):
+        original = getattr(dit.model, method_name)
+        def instrument(method, operation):
+            @wraps(method)
+            def measured(*args, **kwargs):
+                with trace.span(operation):
+                    return method(*args, **kwargs)
+            return measured
+        setattr(dit.model, method_name, instrument(original, "dit."+method_name))
+    effective["memory_transfer_strategy"] = "streaming_aqt_v1"
+    effective["memory_trace_schema"] = 1
     write_json(run / "configuracion.json", effective)
     generation_start = time.perf_counter()
-    with torch.inference_mode():
+    with trace.span("inference"), torch.inference_mode():
         result = generate_music(dit, lm, params, config, save_dir=str(run))
     torch.cuda.synchronize()
     timings["generacion_total_s"] = time.perf_counter() - generation_start
@@ -122,7 +143,8 @@ def perform(request, run):
     if tensor is None or not torch.isfinite(tensor).all().item():
         raise RuntimeError("Audio ausente o con NaN/Inf.")
     wave = run / "primera_cancion.wav"
-    sf.write(str(wave), tensor.detach().float().cpu().numpy().T, int(audio["sample_rate"]), subtype="PCM_16")
+    with trace.span("export.wav"):
+        sf.write(str(wave), tensor.detach().float().cpu().numpy().T, int(audio["sample_rate"]), subtype="PCM_16")
     info = sf.info(str(wave))
     if abs(info.duration - 30) > 2:
         raise RuntimeError(f"Duracion inesperada: {info.duration:.2f} s; escuchar/revisar, no marcar como toma correcta.")
@@ -151,8 +173,10 @@ def main():
     parser.add_argument("request", type=Path)
     parser.add_argument("run", type=Path)
     args = parser.parse_args()
+    trace = MemoryTrace(args.run)
     try:
-        perform(read_json(args.request), args.run)
+        with trace.span("worker"):
+            perform(read_json(args.request), args.run, trace)
         return 0
     except Exception:
         error = traceback.format_exc()
