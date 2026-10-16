@@ -3,6 +3,7 @@ import hashlib
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 MODULE_PATH = Path(__file__).resolve().parents[1] / "instalacion" / "validar_qwen_bf16.py"
 SPEC = importlib.util.spec_from_file_location("qwen_bf16_validator", MODULE_PATH)
@@ -44,6 +45,20 @@ class VersionTests(unittest.TestCase):
         self.assertEqual(len(errors), 2)
         self.assertTrue(any("Python requerido 3.12.12" in error for error in errors))
         self.assertTrue(any("transformers requerido 4.57.6" in error for error in errors))
+
+
+class SharedLoaderTests(unittest.TestCase):
+    def test_validation_delegates_to_the_production_qwen_loader(self):
+        model_path = Path("checkpoints/Qwen3-Embedding-0.6B")
+        dtype = object()
+        model = object()
+        with patch(
+            "musicstudio.text_encoder_memory.load_qwen_encoder", return_value=model
+        ) as production_loader:
+            loaded = validator.load_validation_encoder(model_path, dtype)
+
+        self.assertIs(loaded, model)
+        production_loader.assert_called_once_with(model_path, dtype)
 
 
 class ParameterSummaryTests(unittest.TestCase):

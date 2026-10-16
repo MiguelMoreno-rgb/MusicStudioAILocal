@@ -63,6 +63,19 @@ def validate_versions(python_version, package_versions):
     return errors
 
 
+def load_validation_encoder(model_path, dtype):
+    """Use the exact loader shared with production, even under Python -I."""
+    project_root = str(ROOT)
+    if project_root not in sys.path:
+        # The BAT launches this worker in isolated mode, which intentionally
+        # omits the project directory from sys.path. Add only this fixed root
+        # so validation imports the production loader rather than duplicating it.
+        sys.path.insert(0, project_root)
+    from musicstudio.text_encoder_memory import load_qwen_encoder
+
+    return load_qwen_encoder(model_path, dtype)
+
+
 def summarize_parameters(parameters):
     """Summarize real or synthetic parameter objects without importing torch."""
     dtypes, devices = Counter(), Counter()
@@ -235,7 +248,6 @@ def _worker(run_dir, model_path):
             raise RuntimeError("RAM disponible inferior a 4 GiB antes de importar PyTorch; se omite la carga.")
         import torch
         import transformers
-        from transformers import AutoModel
 
         versions = {"torch": torch.__version__, "transformers": transformers.__version__}
         report["package_versions"] = versions
@@ -251,9 +263,7 @@ def _worker(run_dir, model_path):
         report["load_started_utc"] = datetime.now(timezone.utc).isoformat()
         print("[WORKER] Cargando únicamente Qwen3-Embedding-0.6B en CPU/BF16; sin tokenizer, DiT, VAE ni generación.", flush=True)
         load_started = time.perf_counter()
-        model = AutoModel.from_pretrained(
-            str(model_path), dtype=torch.bfloat16, low_cpu_mem_usage=True, local_files_only=True,
-        )
+        model = load_validation_encoder(model_path, torch.bfloat16)
         load_elapsed = time.perf_counter() - load_started
         summary = summarize_parameters(model.parameters())
         report["parameter_summary"] = summary

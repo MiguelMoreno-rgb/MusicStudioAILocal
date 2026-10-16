@@ -72,9 +72,11 @@ class TextEncoderCPUOffloadTests(unittest.TestCase):
 
         self.assertEqual(result, str(checkpoint))
         transformers.AutoModel.from_pretrained.assert_called_once_with(
-            str(checkpoint), dtype=self.dtype
+            str(checkpoint), dtype=self.dtype, local_files_only=True
         )
-        transformers.AutoTokenizer.from_pretrained.assert_called_once_with(str(checkpoint))
+        transformers.AutoTokenizer.from_pretrained.assert_called_once_with(
+            str(checkpoint), local_files_only=True
+        )
         self.assertIs(handler.text_encoder, model)
         self.assertEqual(handler.text_tokenizer, "tokenizer")
         self.assertTrue(model.evaluating)

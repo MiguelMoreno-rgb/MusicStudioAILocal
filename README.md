@@ -14,7 +14,7 @@ Configuración: DiT 2B Turbo, LM musical 0.6B opcional, backend PyTorch (`pt`), 
 
 **Si la primera generación fue detenida por RAM baja:** lee [CORRECCION_RAM.md](CORRECCION_RAM.md). La actualización elimina el intento redundante de transferencia INT8 y añade trazas de memoria por operación; no acredita aún que la toma quepa en tu laptop. Actualiza el código y revisemos antes de ejecutar otra generación.
 
-**Antes de autorizar otra generación tras la tercera prueba:** ejecuta [10_VALIDAR_QWEN_BF16.bat](10_VALIDAR_QWEN_BF16.bat) y sigue [VALIDAR_QWEN_BF16.md](VALIDAR_QWEN_BF16.md). Esta comprobación carga solo Qwen local en CPU/BF16, verifica dtype/dispositivo, mide RAM/RSS/memoria privada y no inicia el DiT, VAE ni generación.
+**Antes de autorizar otra generación tras la tercera prueba:** ejecuta [10_VALIDAR_QWEN_BF16.bat](10_VALIDAR_QWEN_BF16.bat) y sigue [VALIDAR_QWEN_BF16.md](VALIDAR_QWEN_BF16.md). Esta comprobación comparte el cargador de Qwen con producción, carga solo el checkpoint local en CPU/BF16, verifica dtype/dispositivo, mide RAM/RSS/memoria privada y no inicia el DiT, VAE ni generación.
 
 ## Actualizar tu instalación existente sin ZIP
 

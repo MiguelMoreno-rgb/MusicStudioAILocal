@@ -46,7 +46,9 @@ Fuentes fijadas: [orquestador](https://github.com/ace-step/ACE-Step-1.5/blob/ca1
 
 ## Cambio acotado de esta rama
 
-`TextEncoderCPUOffloadMixin` usa `AutoModel.from_pretrained(path, dtype=self.dtype)` únicamente para CUDA con offload a CPU. El modelo queda en CPU, sus pesos flotantes se comprueban contra el dtype de inferencia y se detiene con error claro si Transformers devuelve otro dispositivo o dtype. El perfil CUDA existente luego mueve ese mismo encoder BF16 a CUDA; no se cambia la cuantización del DiT ni se convierte el encoder a INT8. Las demás combinaciones siguen usando el loader ACE-Step original.
+`TextEncoderCPUOffloadMixin` y la validación local usan la misma función `load_qwen_encoder(path, dtype)`. Esta ejecuta `AutoModel.from_pretrained(..., dtype=dtype, local_files_only=True)`; el tokenizer de producción también se carga con `local_files_only=True`. El modelo queda en CPU, sus pesos flotantes se comprueban contra el dtype de inferencia y se detiene con error claro si Transformers devuelve otro dispositivo o dtype. El perfil CUDA existente luego mueve ese mismo encoder BF16 a CUDA; no se cambia la cuantización del DiT ni se convierte el encoder a INT8. Las demás combinaciones siguen usando el loader ACE-Step original.
+
+Se retiró `low_cpu_mem_usage=True` de la prueba y del cargador compartido porque Transformers 4.57.6 lo descarta como argumento heredado en `from_pretrained`. En esta versión el modelo se inicializa en `meta` mediante `init_empty_weights` independientemente de ese flag. El checkpoint fijado usa `model.safetensors`; el cargador consulta sus metadatos en `meta` y procesa parámetros desde el archivo por nombre. Por código, la llamada con y sin `low_cpu_mem_usage=True` sigue el mismo camino y no se espera ahorro adicional al pasar el flag. Es una revisión estática de la etiqueta 4.57.6, no una medición de memoria de la laptop; el pico real y el posible overhead siguen pendientes de la carga local.
 
 Al cargar directamente en el dtype final, los valores BF16 del checkpoint, si se confirma ese dtype al leer sus metadatos localmente, se conservan en BF16 en vez de expandirse a FP32 y después volver a BF16. La prueba sintética verifica que esa ida y vuelta de valores BF16 es exacta. El ahorro teórico persistente es ~1.12 GiB, sin incluir allocator, buffers o overhead. El test del loader usa módulos falsos; no mide RSS.
 
@@ -56,6 +58,6 @@ El nuevo loader **no aumenta la VRAM final esperada**: el flujo actual ya convie
 
 ## Pruebas y siguiente validación
 
-Las 7 pruebas nuevas pasaron con un módulo sintético y un tensor BF16 pequeño. La suite completa de `pruebas` pasó: **95 ejecutadas, 90 aprobadas, 5 omitidas** por necesitar Windows/CUDA. No se usan checkpoints ACE-Step ni se genera audio. Estas pruebas no miden RSS, memoria comprometida o VRAM de la RTX 4060.
+Las pruebas sintéticas del loader usan módulos falsos y verifican que producción y validador compartan la llamada offline y el dtype solicitado; un tensor BF16 pequeño confirma el roundtrip. No se usan checkpoints ACE-Step ni se genera audio. Estas pruebas no miden RSS, memoria comprometida o VRAM de la RTX 4060.
 
 Después de revisar el cambio en esta rama, la validación debe hacerse en el Windows real antes de autorizar otra canción. Ejecutar las pruebas nuevas con el Python privado y revisar la carga del encoder y su dtype. La primera generación posterior debe seguir autorizada por separado; el protector de RAM continúa deteniendo el worker al detectar menos de 1 GiB disponible durante tres muestras consecutivas.

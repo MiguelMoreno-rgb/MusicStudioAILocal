@@ -4,6 +4,23 @@ from __future__ import annotations
 import os
 
 
+def load_qwen_encoder(checkpoint_path, dtype):
+    """Load Qwen with the production and validation path's shared options.
+
+    Transformers 4.57.6 accepts ``low_cpu_mem_usage`` only as a legacy kwarg
+    and discards it. Its ``from_pretrained`` path already initializes model
+    parameters on ``meta`` and streams this pinned safetensors checkpoint into
+    the CPU model. Keep the effective contract explicit and offline here.
+    """
+    from transformers import AutoModel
+
+    return AutoModel.from_pretrained(
+        os.fspath(checkpoint_path),
+        dtype=dtype,
+        local_files_only=True,
+    )
+
+
 class TextEncoderCPUOffloadMixin:
     """Load the encoder directly in its eventual CUDA inference dtype.
 
@@ -20,21 +37,21 @@ class TextEncoderCPUOffloadMixin:
                 checkpoint_dir=checkpoint_dir, device=device
             )
 
-        from transformers import AutoModel, AutoTokenizer
+        from transformers import AutoTokenizer
 
         text_encoder_path = os.path.join(checkpoint_dir, "Qwen3-Embedding-0.6B")
         if not os.path.exists(text_encoder_path):
             raise FileNotFoundError(f"Text encoder not found at {text_encoder_path}")
 
-        self.text_tokenizer = AutoTokenizer.from_pretrained(text_encoder_path)
+        self.text_tokenizer = AutoTokenizer.from_pretrained(
+            text_encoder_path, local_files_only=True
+        )
         # Transformers 4.57.6 supports `dtype` here (ACE-Step uses the same
         # argument for its DiT). Without it, from_pretrained explicitly defaults
         # to float32 even when the checkpoint stores lower-precision tensors.
         # No device_map is supplied, so weights remain on CPU until the existing
         # _load_model_context transfers them to CUDA.
-        self.text_encoder = AutoModel.from_pretrained(
-            text_encoder_path, dtype=self.dtype
-        )
+        self.text_encoder = load_qwen_encoder(text_encoder_path, self.dtype)
 
         saw_floating_parameter = False
         for name, parameter in self.text_encoder.named_parameters():
