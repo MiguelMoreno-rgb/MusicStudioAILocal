@@ -7,6 +7,12 @@ La herramienta **08_REPARAR_TRASLADO.bat** está preparada exclusivamente para e
 
 `%USERPROFILE%` es tu carpeta de usuario Windows. El BAT deduce ambas rutas; no hay que editar código. Debe ejecutarse desde la carpeta definitiva, junto a `.venv` y `.runtime`. No es una herramienta general para trasladar cualquier entorno ni autoriza otras carpetas de OneDrive.
 
+## Actualización recomendada: sin ZIP ni copiar archivos
+
+Configura una vez el [actualizador directo desde GitHub](ACTUALIZACIONES.md#primera-vez-un-comando-de-powershell). Usa el Python base existente aunque `.venv` siga pendiente de reparación. Incorpora las correcciones conocidas de `numba` con preflight, confirmación y respaldo; después ejecuta **08_REPARAR_TRASLADO.bat**. En futuras publicaciones basta **ACTUALIZAR_MUSICSTUDIO.bat**. No modifica `.venv` durante la actualización de código.
+
+Las instrucciones de copia manual siguientes se conservan como alternativa histórica; el flujo normal ya no las necesita.
+
 ## Si la reparación se detuvo en `numba`
 
 Ese bloqueo ocurre antes de aplicar cambios al entorno. No borres `numba` ni edites sus rutas a mano. La corrección actual reconoce su formato y mantiene las comprobaciones y el respaldo.

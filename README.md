@@ -10,6 +10,12 @@ Configuración: DiT 2B Turbo, LM musical 0.6B opcional, backend PyTorch (`pt`), 
 
 **Si `08_REPARAR_TRASLADO.bat` se detuvo en «script no reconocido: numba»:** sigue [estos pasos de actualización de solo dos archivos](REPARAR_TRASLADO.md#si-la-reparación-se-detuvo-en-numba). No reinstales paquetes ni sustituyas `.venv` o `.runtime`.
 
+## Actualizar tu instalación existente sin ZIP
+
+Si ya tienes Python privado y los 57 paquetes, configura una sola vez la [actualización directa desde GitHub](ACTUALIZACIONES.md#primera-vez-un-comando-de-powershell): un comando de PowerShell descarga el configurador de un commit concreto, verifica SHA256 y pide revisión/confirmación antes de ejecutarlo. Funciona aunque la reparación de `.venv` siga pendiente.
+
+Después solo ejecuta **ACTUALIZAR_MUSICSTUDIO.bat**. Muestra los cambios de `main`, bloquea modificaciones locales y procesos activos, y crea respaldo recuperable. Mantiene intactos entorno, modelos y archivos personales. La corrección pendiente de `numba` llega por este flujo; luego ejecuta **08_REPARAR_TRASLADO.bat** por separado. No reinstales paquetes ni descargues modelos para actualizar código.
+
 ## Descargar todo como ZIP desde GitHub
 
 1. Abre [MiguelMoreno-rgb/MusicStudioAILocal](https://github.com/MiguelMoreno-rgb/MusicStudioAILocal).

@@ -2,6 +2,14 @@
 $ErrorActionPreference = 'Stop'
 $MusicRoot = Split-Path $PSScriptRoot -Parent
 Set-Location -LiteralPath $MusicRoot
+# Keep this mutex alive for the lifetime of this PowerShell/BAT process.
+# The updater uses the same name without loading project code.
+$keyHash = [Security.Cryptography.SHA256]::Create()
+try { $key = ([BitConverter]::ToString($keyHash.ComputeHash([Text.Encoding]::UTF8.GetBytes([IO.Path]::GetFullPath($MusicRoot).TrimEnd('\').ToLowerInvariant())))).Replace('-','') } finally { $keyHash.Dispose() }
+$script:MusicOperationMutex = New-Object Threading.Mutex($false, ('Local\MusicStudioAILocal-' + $key))
+$script:MusicOperationHeld = $false
+try { $script:MusicOperationHeld = $script:MusicOperationMutex.WaitOne(0) } catch [Threading.AbandonedMutexException] { $script:MusicOperationHeld = $true }
+if (-not $script:MusicOperationHeld) { throw 'Otra operacion del proyecto esta activa (actualizacion, instalacion, reparacion o generacion). Esperar a que termine.' }
 $Pins = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'bootstrap.lock.json') -Raw | ConvertFrom-Json
 $PrivatePython = Join-Path $MusicRoot '.venv\Scripts\python.exe'
 $PrivateUv = Join-Path $MusicRoot '.runtime\uv\uv.exe'
