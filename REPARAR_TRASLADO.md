@@ -7,6 +7,22 @@ La herramienta **08_REPARAR_TRASLADO.bat** está preparada exclusivamente para e
 
 `%USERPROFILE%` es tu carpeta de usuario Windows. El BAT deduce ambas rutas; no hay que editar código. Debe ejecutarse desde la carpeta definitiva, junto a `.venv` y `.runtime`. No es una herramienta general para trasladar cualquier entorno ni autoriza otras carpetas de OneDrive.
 
+## Si la reparación se detuvo en `numba`
+
+Ese bloqueo ocurre antes de aplicar cambios al entorno. No borres `numba` ni edites sus rutas a mano. La corrección actual reconoce su formato y mantiene las comprobaciones y el respaldo.
+
+1. Descarga el [ZIP actualizado de main](https://github.com/MiguelMoreno-rgb/MusicStudioAILocal/archive/refs/heads/main.zip) y extráelo **en otra carpeta temporal**.
+2. En tu instalación definitiva, sustituye **únicamente** `musicstudio\relocate.py` e `instalacion\reparacion.lock.json` por los del ZIP, respetando sus subcarpetas. Copia ambos; el segundo incorpora las huellas del script auditado. El BAT `08_REPARAR_TRASLADO.bat` y los scripts PowerShell no cambian en esta corrección.
+3. Conserva `.venv`, `.runtime`, `.state`, `.cache`, `checkpoints` y `resultados`. No copies estas carpetas desde otra instalación ni ejecutes `03_INSTALAR.bat` o `04_DESCARGAR_MODELOS.bat`.
+4. Mantén la carpeta **Siempre mantener en este dispositivo**, espera su disponibilidad local, pausa OneDrive y cierra procesos de este proyecto.
+5. Ejecuta otra vez **08_REPARAR_TRASLADO.bat** desde `C:\Users\manri\OneDrive\Documentos\MusicStudioAILocal\MusicStudioAILocal-main`. Confirma **PAUSADO**; se repetirá el inventario completo, sin reinstalar paquetes.
+6. Revisa el plan. Puede incluir `.venv\Scripts\numba` y `numba-0.63.1.dist-info\RECORD`, además de las referencias de traslado ya previstas. Solo después escribe **REPARAR**.
+7. Comparte el resultado final y, si se genera, el nuevo `validacion.json`. No descargues modelos hasta superar la validación.
+
+Si falta la entrada `RECORD`, su hash no coincide, el cuerpo de `numba` difiere o aparece otro formato desconocido, se detiene antes de escribir. Conserva el mensaje completo y esos archivos para revisarlos; no hace falta reinstalar los paquetes para investigar.
+
+El [análisis de Numba y de los otros 56 wheels](INVESTIGACION_NUMBA.md) documenta el formato, fuentes, huellas y pruebas. No se ha leído tu archivo local desde la nube: el reparador debe confirmar que coincide con el script oficial antes de autorizar el cambio.
+
 ## Qué causó el error
 
 Un entorno virtual normal de Windows no se vuelve portable por moverlo. `pyvenv.cfg` conserva referencias al runtime original. Además, uv 0.9.6 puede crear lanzadores **UVPY** para Python y **UVSC** para scripts de paquetes con una ruta absoluta dentro del EXE. El mensaje `No Python at ...Downloads...` es compatible con esas referencias antiguas. Antes de decidir qué necesita tu copia, la herramienta analiza su configuración y lanzadores reales.
@@ -61,7 +77,7 @@ Después de aprobar el plan:
 
 1. Repite el inventario para detectar cambios desde la vista previa. Si cambió, cancela antes de escribir.
 2. Crea `.state\repair-backups\<fecha-hora>`, guarda los originales de cada objetivo, inventario y diario de la transacción.
-3. Actualiza únicamente los campos de ruta reconocidos de `.venv\pyvenv.cfg`, rutas de activación reconocidas, trailers de launchers uv reconocidos y `.state\owner.json`. Si cambia un launcher de paquete, ajusta **solo su hash y tamaño en el `RECORD` correspondiente** para mantener consistente la metadata instalada. Código de los paquetes, DLL, pesos, versiones y payloads ejecutables no se reemplazan.
+3. Actualiza únicamente los campos de ruta reconocidos de `.venv\pyvenv.cfg`, rutas de activación reconocidas, trailers de launchers uv reconocidos, la primera línea del script wheel `numba` auditado y `.state\owner.json`. Si cambia un launcher o el shebang de `numba`, ajusta **solo su hash y tamaño en el `RECORD` correspondiente** para mantener consistente la metadata instalada. Código de los paquetes, DLL, pesos, versiones y payloads ejecutables no se reemplazan.
 4. Invalida el marcador de validación de la ubicación anterior, que debe volver a generarse. No borra informes anteriores.
 5. Comprueba por inventario que no se modificó ningún otro archivo protegido. Prueba el Python de `.venv`, su nuevo `sys.prefix`, PyTorch 2.10.0+cu128, disponibilidad CUDA 12.8 y una operación BF16 pequeña en la GPU. Después vuelve a comprobar conservación de los archivos y versiones.
 

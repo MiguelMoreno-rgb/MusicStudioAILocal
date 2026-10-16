@@ -8,6 +8,8 @@ Configuración: DiT 2B Turbo, LM musical 0.6B opcional, backend PyTorch (`pt`), 
 
 **Si moviste la instalación de Downloads a OneDrive\Documentos y aparece `No Python at ...Downloads...`:** aplica [REPARAR_TRASLADO.md](REPARAR_TRASLADO.md) y **08_REPARAR_TRASLADO.bat**. Usa el runtime privado que ya existe, comprueba paquetes antes de escribir y repara referencias con backup; no reinstala los 57 paquetes. No extraigas el ZIP encima de `.venv` o `.runtime`: copia únicamente los archivos indicados en esa guía.
 
+**Si `08_REPARAR_TRASLADO.bat` se detuvo en «script no reconocido: numba»:** sigue [estos pasos de actualización de solo dos archivos](REPARAR_TRASLADO.md#si-la-reparación-se-detuvo-en-numba). No reinstales paquetes ni sustituyas `.venv` o `.runtime`.
+
 ## Descargar todo como ZIP desde GitHub
 
 1. Abre [MiguelMoreno-rgb/MusicStudioAILocal](https://github.com/MiguelMoreno-rgb/MusicStudioAILocal).

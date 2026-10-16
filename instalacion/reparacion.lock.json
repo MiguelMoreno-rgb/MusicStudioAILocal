@@ -19,5 +19,17 @@
     "musicstudio/int8_offload.py": "1b6ab1aa1700dcfc226d47cb5e8f053f1e84c920c648f49e90284e5367273b54",
     "instalacion/ejecutar.py": "ca5bc74829b50258bae4ac866e56e5166714ce6825006f4461ca7740d5464f6d",
     "instalacion/requirements-windows.lock.txt": "d63418b613d16347b0b668af1430d859b6e5b9076078b7024aab09d1242593cf"
+  },
+  "wheel_scripts": {
+    "numba": {
+      "distribution": "numba",
+      "version": "0.63.1",
+      "wheel": "numba-0.63.1-cp312-cp312-win_amd64.whl",
+      "wheel_sha256": "bbad8c63e4fc7eb3cdb2c2da52178e180419f7969f9a685f283b313a70b92af3",
+      "body_sha256": [
+        "4f09858b22ba5bb3cafb5b8d2c4c35c97877d9fc04235cd77e46533f38233add",
+        "b8b084de6c17aa7e337cc82417878401e878dcefbe5203d4d029f3893b750a12"
+      ]
+    }
   }
 }

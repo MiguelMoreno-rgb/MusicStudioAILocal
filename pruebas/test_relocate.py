@@ -5,6 +5,7 @@ import hashlib
 import io
 import json
 from pathlib import Path
+import re
 import struct
 import tempfile
 import unittest
@@ -14,9 +15,103 @@ from musicstudio import relocate as repair
 
 OLD = r'C:\Users\Usuario\Downloads\MusicStudioAILocal-main'
 NEW = r'C:\Users\Usuario\OneDrive\Documentos\MusicStudioAILocal\MusicStudioAILocal-main'
+PINS = json.loads((Path(__file__).resolve().parents[1] / 'instalacion/reparacion.lock.json').read_text())
+# Exact body from the SHA256-verified numba 0.63.1 cp312 Windows wheel.
+NUMBA_BODY = (b'# -*- coding: UTF-8 -*-\r\n'
+              b'from __future__ import print_function, division, absolute_import\r\n\r\n'
+              b'from numba.misc.numba_entry import main\r\n\r\n'
+              b'if __name__ == "__main__":\r\n    main()\r\n')
 
 
 class RelocationTests(unittest.TestCase):
+    def numba_fixture(self, root, old):
+        # Match uv 0.9.6's handling of the wheel CRLF shebang: extra LF remains.
+        data = b'#!' + str(old / '.venv/Scripts/python.exe').replace('/', '\\').encode() + b'\r\n\n' + NUMBA_BODY
+        (root / '.venv/Scripts/numba').write_bytes(data)
+        record = next((root / '.venv/Lib/site-packages').glob('numba-*.dist-info/RECORD'))
+        hashed = 'sha256=' + base64.urlsafe_b64encode(hashlib.sha256(data).digest()).rstrip(b'=').decode()
+        with record.open('a', newline='') as f:
+            csv.writer(f).writerow(['../../Scripts/numba', hashed, str(len(data))])
+        return data, record
+
+    def test_numba_uv_wheel_shebang_preserves_exact_body(self):
+        for body in (NUMBA_BODY, b'\n' + NUMBA_BODY):
+            with self.subTest(extra_lf=body.startswith(b'\n')):
+                data = b'#!' + OLD.encode() + b'\\.venv\\Scripts\\python.exe\r\n' + body
+                out = repair.rewrite_wheel_script(data, OLD, NEW, PINS['wheel_scripts']['numba'])
+                self.assertEqual(out, b'#!' + NEW.encode() + b'\\.venv\\Scripts\\python.exe\r\n' + body)
+                self.assertEqual(repair.rewrite_wheel_script(out, OLD, NEW, PINS['wheel_scripts']['numba']), out)
+
+    def test_numba_unknown_body_or_interpreter_stops(self):
+        good = b'#!' + OLD.encode() + b'\\.venv\\Scripts\\python.exe\r\n' + NUMBA_BODY
+        for data in (good + b'# changed\r\n', good.replace(b'numba.misc', b'other.misc'),
+                     good.replace(b'python.exe', b'python.exe --flag'),
+                     b'#!C:\\OtherApp\\python.exe\r\n' + NUMBA_BODY,
+                     good.replace(b'\r\n', b'\n')):
+            with self.subTest(data=data[:80]), self.assertRaises(repair.StopRepair):
+                repair.rewrite_wheel_script(data, OLD, NEW, PINS['wheel_scripts']['numba'])
+
+    def test_numba_complete_preflight_transaction_and_record(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root, old = self.installed_fixture(temp)
+            data, record = self.numba_fixture(root, old)
+            pins = dict(PINS, required_code={}, launcher_prefixes=[])
+            plan, inventory, versions = repair.preflight(root, old, pins)
+            name = '.venv/Scripts/numba'
+            record_name = record.relative_to(root).as_posix()
+            self.assertEqual((root / name).read_bytes(), data)  # Still read-only.
+            self.assertIn(record_name, plan)
+            self.assertEqual(plan[name].partition(b'\r\n')[2], b'\n' + NUMBA_BODY)
+            repair.apply_transaction(root, plan, inventory, lambda: None)
+            self.assertEqual((root / name).read_bytes(), plan[name])
+            distributions, after_versions = repair.installed_packages(root, repair.expected_packages(root / 'instalacion/requirements-windows.lock.txt'))
+            self.assertEqual(versions, after_versions)
+            self.assertEqual(repair.record_changes(root, distributions, {}, repair.snapshot(root)), {})
+            backups = list((root / '.state/repair-backups').glob('*/originals/.venv/Scripts/numba'))
+            self.assertEqual(len(backups), 1)
+            self.assertEqual(backups[0].read_bytes(), data)
+
+    def test_numba_missing_owner_or_corrupt_record_stops_before_backup(self):
+        for fault in ('unowned', 'wrong_hash', 'wrong_size'):
+            with self.subTest(fault=fault), tempfile.TemporaryDirectory() as temp:
+                root, old = self.installed_fixture(temp)
+                data, record = self.numba_fixture(root, old)
+                text = record.read_text()
+                if fault == 'unowned':
+                    text = '\n'.join(line for line in text.splitlines() if '../../Scripts/numba' not in line) + '\n'
+                elif fault == 'wrong_hash':
+                    text = re.sub(r'(../../Scripts/numba,sha256=)[^,]+', r'\g<1>invalid', text)
+                else:
+                    text = text.replace(',' + str(len(data)), ',999999')
+                record.write_text(text)
+                with self.assertRaises(repair.StopRepair):
+                    repair.preflight(root, old, dict(PINS, required_code={}, launcher_prefixes=[]))
+                self.assertEqual((root / '.venv/Scripts/numba').read_bytes(), data)
+                self.assertFalse((root / '.state/repair-backups').exists())
+
+    def test_numba_rollback_restores_script_and_record(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root, old = self.installed_fixture(temp)
+            data, record = self.numba_fixture(root, old)
+            original_record = record.read_bytes()
+            plan, inventory, _ = repair.preflight(root, old, dict(PINS, required_code={}, launcher_prefixes=[]))
+            def fail():
+                raise RuntimeError('postcheck failure')
+            with self.assertRaises(RuntimeError):
+                repair.apply_transaction(root, plan, inventory, fail)
+            self.assertEqual((root / '.venv/Scripts/numba').read_bytes(), data)
+            self.assertEqual(record.read_bytes(), original_record)
+
+    def test_all_other_unknown_scripts_are_reported_before_writes(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root, old = self.installed_fixture(temp)
+            self.numba_fixture(root, old)
+            for name in ('unknown-a', 'unknown-z'):
+                (root / '.venv/Scripts' / name).write_text(str(old))
+            with self.assertRaisesRegex(repair.StopRepair, 'unknown-a, unknown-z'):
+                repair.preflight(root, old, dict(PINS, required_code={}, launcher_prefixes=[]))
+            self.assertFalse((root / '.state/repair-backups').exists())
+
     def installed_fixture(self, temp):
         root = Path(temp) / 'new'
         old = Path(temp) / 'old'

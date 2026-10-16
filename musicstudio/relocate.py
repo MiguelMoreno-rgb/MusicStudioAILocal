@@ -183,6 +183,52 @@ def rewrite_activation(data, old, new):
     return text.encode(encoding)
 
 
+def rewrite_wheel_script(data, old, new, pin):
+    """Audited wheel .data/scripts Python text; change only its shebang.
+
+    uv 0.9.6 install_script replaces #!python with an absolute interpreter.
+    With a CRLF source it consumes CR only, retaining LF before the body.
+    Both byte-exact bodies are pinned; no newline or source normalization.
+    """
+    first, separator, body = data.partition(b'\r\n')
+    if not separator or not first.startswith(b'#!') or digest(body) not in pin['body_sha256']:
+        raise StopRepair('Script wheel no coincide con el cuerpo/formato auditado. No se modifica.')
+    try:
+        target = first[2:].decode('utf-8')
+    except UnicodeError as exc:
+        raise StopRepair('Shebang wheel no es UTF-8.') from exc
+    before = str(Path(old) / '.venv/Scripts/python.exe')
+    after = str(Path(new) / '.venv/Scripts/python.exe')
+    if not any(win_equal(target, allowed) for allowed in (before, after)):
+        raise StopRepair('Shebang wheel no apunta al Python privado autorizado.')
+    if win_equal(target, after):
+        return data
+    # Preserve every byte after the first line, including uv's extra LF.
+    return b'#!' + after.replace('/', '\\').encode('utf-8') + separator + body
+
+
+def check_wheel_script_owner(root, path, distributions, pin):
+    """Require the exact installed distribution and a hashed RECORD entry.
+
+    record_changes subsequently checks this hash against the original census,
+    and updates it in the same transaction as the script.
+    """
+    matches = []
+    for dist in distributions:
+        if (dist.metadata['Name'].lower(), dist.version) != (pin['distribution'], pin['version']):
+            continue
+        record = Path(dist._path) / 'RECORD'
+        if not record.is_file():
+            raise StopRepair(f'Falta RECORD del script {path.name}.')
+        for row in csv.reader(io.StringIO(record.read_text(encoding='utf-8'))):
+            if len(row) != 3:
+                raise StopRepair(f'RECORD malformado del script {path.name}.')
+            if (root / '.venv/Lib/site-packages' / row[0]).resolve() == path.resolve():
+                matches.append(row)
+    if len(matches) != 1 or not matches[0][1].startswith('sha256=') or not matches[0][2].isdigit():
+        raise StopRepair(f'Script {path.name} sin propietario RECORD unico con hash/tamano. No se modifica.')
+
+
 def expected_packages(lock):
     result = {}
     for line in lock.read_text().splitlines():
@@ -316,6 +362,7 @@ def preflight(root, old, pins):
         planned['.venv/pyvenv.cfg'] = updated_cfg
     scripts = root / '.venv/Scripts'
     activations = {'activate', 'activate.bat', 'activate.ps1', 'activate.csh', 'activate.fish', 'activate.nu', 'activate_this.py', 'deactivate.bat'}
+    unknown = []
     for path in scripts.iterdir():
         if not path.is_file():
             continue
@@ -334,10 +381,16 @@ def preflight(root, old, pins):
                 raise StopRepair(f'EXE con referencia antigua y formato no reconocido: {path.name}. No se modifica.')
         elif path.name.lower() in activations:
             rewritten = rewrite_activation(data, old, root)
+        elif path.name in pins.get('wheel_scripts', {}):
+            pin = pins['wheel_scripts'][path.name]
+            check_wheel_script_owner(root, path, distributions, pin)
+            rewritten = rewrite_wheel_script(data, old, root, pin)
         elif str(old).lower().encode() in data.lower():
-            raise StopRepair(f'Referencia antigua en script no reconocido: {path.name}. Requiere revision.')
+            unknown.append(path.name)
         if rewritten is not None and rewritten != data:
             planned[path.relative_to(root).as_posix()] = rewritten
+    if unknown:
+        raise StopRepair('Referencias antiguas en scripts no reconocidos: ' + ', '.join(sorted(unknown)) + '. Requieren revision; no se escribe nada.')
     planned.update(record_changes(root, distributions, planned, inventory))
     new_owner = dict(owner, root=str(root))
     if not win_equal(owner['root'], root):
