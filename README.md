@@ -6,6 +6,8 @@ Configuración: DiT 2B Turbo, LM musical 0.6B opcional, backend PyTorch (`pt`), 
 
 **Si ya instalaste los 57 paquetes y falló `model.to("cuda")` con `aten._has_compatible_shallow_copy_type`:** aplica la [corrección INT8 sin reinstalar](CORRECCION_INT8.md). Solo requiere copiar `musicstudio/validate.py` y el nuevo `musicstudio/int8_offload.py`, y volver a ejecutar `07_VALIDAR_ENTORNO.bat`. Mantén la descarga de modelos pendiente hasta revisar esa validación.
 
+**Si moviste la instalación de Downloads a OneDrive\Documentos y aparece `No Python at ...Downloads...`:** aplica [REPARAR_TRASLADO.md](REPARAR_TRASLADO.md) y **08_REPARAR_TRASLADO.bat**. Usa el runtime privado que ya existe, comprueba paquetes antes de escribir y repara referencias con backup; no reinstala los 57 paquetes. No extraigas el ZIP encima de `.venv` o `.runtime`: copia únicamente los archivos indicados en esa guía.
+
 ## Descargar todo como ZIP desde GitHub
 
 1. Abre [MiguelMoreno-rgb/MusicStudioAILocal](https://github.com/MiguelMoreno-rgb/MusicStudioAILocal).
@@ -19,7 +21,7 @@ Extrae la carpeta en un disco local con permiso de escritura, preferiblemente do
 
 ## Etapa 1: instalar y probar, sin editar código
 
-Usa una ruta corta y estable, por ejemplo `C:\MusicStudioAILocal` o `E:\MusicStudioAILocal`, fuera de OneDrive. No muevas la carpeta después de crear `.venv`; no sobrescribas un entorno o resultados existentes al descargar actualizaciones.
+Usa una ruta corta y estable, por ejemplo `C:\MusicStudioAILocal` o `E:\MusicStudioAILocal`. No muevas un `.venv` creado ni sobrescribas entornos/resultados con un ZIP. Para el traslado ya realizado se autoriza específicamente `%USERPROFILE%\OneDrive\Documentos\MusicStudioAILocal\MusicStudioAILocal-main`, mediante la [reparación controlada](REPARAR_TRASLADO.md); no es un permiso general para otras carpetas de OneDrive.
 
 1. Ejecuta **00_VER_PLAN.bat**. Solo muestra el plan y comprueba recursos; no descarga nada.
 2. Lee [PLAN_ETAPA1.md](PLAN_ETAPA1.md). Si estás de acuerdo, ejecuta **03_INSTALAR.bat** y escribe **INSTALAR** cuando lo solicite. Prepara Python 3.12.12 privado, `.venv`, dependencias con hashes, código fijado y FFmpeg compartido privado. No descarga pesos. Necesita Internet y una reserva de 60 GiB libres.
@@ -69,6 +71,8 @@ Python se obtiene con uv privado y opciones `--no-bin --no-registry`, sin sustit
 | `05_PRIMERA_CANCION.bat` | Una toma de 30 s, prompt/letra/semilla configurables |
 | `06_PRUEBA_SIN_LM.bat` | Alternativa explícita sin LM |
 | `07_VALIDAR_ENTORNO.bat` | Repetir CUDA, INT8 y codecs sin descargar |
+| `08_REPARAR_TRASLADO.bat` | Reparar el traslado específico a Documentos conservando paquetes |
+| `REPARAR_TRASLADO.md` | Archivos a copiar, respaldo y riesgos de OneDrive |
 | `PLAN_ETAPA1.md` | Versiones exactas, riesgos y orden de instalación |
 | `instalacion/` y `musicstudio/` | Scripts y locks propios de integración |
 | `config/` | Prompt y letra de ejemplo; no contienen tu letra privada |

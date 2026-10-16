@@ -46,6 +46,8 @@ El código de modelo `configuration_acestep_v15.py` y `modeling_acestep_v15_turb
 
 Los BAT no requieren administrador. Antes de usarlos, extrae el ZIP de GitHub a una ruta corta y estable, por ejemplo `C:\MusicStudioAILocal` o `E:\MusicStudioAILocal`, fuera de OneDrive y otras apps. No muevas la carpeta una vez creado `.venv`: el instalador rechaza un marcador con otra raíz. Si ya tienes una carpeta con ese nombre, preserva sus archivos; no reemplaces entornos, pesos o resultados por descargar un ZIP nuevo.
 
+Excepción posterior autorizada: para la instalación ya movida a `%USERPROFILE%\OneDrive\Documentos\MusicStudioAILocal\MusicStudioAILocal-main` existe [08_REPARAR_TRASLADO.bat y su guía](REPARAR_TRASLADO.md). Actualiza referencias y marcador tras comprobar conservación de los paquetes, sin una instalación completa. La excepción permite exclusivamente esa ubicación y mantiene todas las demás guardas. Requiere archivos locales y pausa de sincronización durante las operaciones; `.gitignore` no evita que OneDrive sincronice paquetes, cachés o datos privados.
+
 ## Selección exacta de modelos
 
 | Repositorio | Revisión inmutable | Selección |

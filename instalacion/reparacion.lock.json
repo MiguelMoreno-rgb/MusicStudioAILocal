@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "uv_version": "0.9.6",
+  "launcher_prefixes": [
+    {
+      "bytes": 40960,
+      "sha256": "bc0aeeafa2ec10df12a3fb0ce5eae5f38445a836e4664d27caf9101e845b3078",
+      "source": "https://raw.githubusercontent.com/astral-sh/uv/0.9.6/crates/uv-trampoline/trampolines/uv-trampoline-x86_64-console.exe"
+    },
+    {
+      "bytes": 41984,
+      "sha256": "fc83186ef5b332b0810a9cbf76e51d063e09adce61869b204f8be2367e7868e4",
+      "source": "https://raw.githubusercontent.com/astral-sh/uv/0.9.6/crates/uv-trampoline/trampolines/uv-trampoline-x86_64-gui.exe"
+    }
+  ],
+  "required_code": {
+    "musicstudio/common.py": "2592c42982ecce957dc6117f08289c32a6a8c003143e3dfcf12df844fe10e25b",
+    "musicstudio/validate.py": "b164087f35281165e5ff20cd6fd4ea7480c39b5d36c4d5b05fe43b4ed73f9891",
+    "musicstudio/int8_offload.py": "1b6ab1aa1700dcfc226d47cb5e8f053f1e84c920c648f49e90284e5367273b54",
+    "instalacion/ejecutar.py": "ca5bc74829b50258bae4ac866e56e5166714ce6825006f4461ca7740d5464f6d",
+    "instalacion/requirements-windows.lock.txt": "d63418b613d16347b0b668af1430d859b6e5b9076078b7024aab09d1242593cf"
+  }
+}

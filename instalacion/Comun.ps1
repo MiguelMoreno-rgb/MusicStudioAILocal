@@ -48,7 +48,12 @@ function Invoke-Logged {
 
 function Get-Hardware {
     if ($env:OS -ne 'Windows_NT' -or -not [Environment]::Is64BitOperatingSystem -or $env:PROCESSOR_ARCHITECTURE -ne 'AMD64') { throw 'Se requiere Windows x64 (AMD64).' }
-    if ($MusicRoot -match '(?i)kickclip|comfyui|ollama|\\OneDrive\\' -or $MusicRoot.StartsWith('\\')) { throw 'Extrae el proyecto en una carpeta local independiente, fuera de otras apps, OneDrive o rutas de red.' }
+    if ($MusicRoot -match '(?i)kickclip|comfyui|ollama' -or $MusicRoot.StartsWith('\\')) { throw 'Se requiere una carpeta local independiente, fuera de otras apps o rutas de red.' }
+    if ($MusicRoot -match '(?i)\\OneDrive(?: - [^\\]+)?\\') {
+        $authorized = Join-Path $env:USERPROFILE 'OneDrive\Documentos\MusicStudioAILocal\MusicStudioAILocal-main'
+        if ([IO.Path]::GetFullPath($MusicRoot).TrimEnd('\') -ine [IO.Path]::GetFullPath($authorized).TrimEnd('\')) { throw 'Ubicacion OneDrive no autorizada. Solo se permite expresamente Documentos\MusicStudioAILocal\MusicStudioAILocal-main de este usuario.' }
+        Write-Host 'Ubicacion OneDrive autorizada: mantener archivos siempre en este dispositivo y pausar sincronizacion mientras se repara/ejecuta.' -ForegroundColor Yellow
+    }
     if ($MusicRoot.Length -gt 110) { throw 'Ruta demasiado larga. Usa una carpeta corta como C:\MusicStudioAILocal.' }
     $os = Get-CimInstance Win32_OperatingSystem
     $ram = [math]::Round(($os.FreePhysicalMemory * 1KB / 1GB), 2)
