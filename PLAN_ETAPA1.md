@@ -26,6 +26,8 @@ La guía general de ACE-Step activa compilación al recomendar INT8, pero en **e
 
 La primera ruta usará **`compile_model=False`**, sin instalar compiladores ni Triton. La validación local cuantiza una capa real en CPU BF16, la pasa a CUDA y prueba forward y traslado CPU/GPU. En el modelo completo también se cuentan las capas con almacenamiento INT8: si TorchAO falla o ACE-Step desactiva cuantización, **se detiene**. No se promete que pasar la capa pequeña baste para que todo el modelo funcione.
 
+Corrección posterior: esa transferencia de validación se realiza mediante el helper auténtico **`_recursive_to_device` de ACE-Step**, que contiene el fallback para AQT bajo `inference_mode`; no mediante `Module.to()` directo. Se comprueban también dispositivos internos, conservación de INT8 y dos ciclos de ida y vuelta. La causa y actualización sin reinstalar se explican en [CORRECCION_INT8.md](CORRECCION_INT8.md); las versiones de esta tabla se conservan.
+
 ### Adaptación para evitar el LM 1.7B
 
 `MAIN_MODEL_COMPONENTS` upstream incluye LM 1.7B. Usar el inicializador sin adaptación intentaría descargarlo aunque el usuario pidiera 0.6B. Nuestra subclase `SmallModelHandler` sustituye únicamente la comprobación de componentes presentes por Turbo, VAE y encoder, después de verificar los archivos por hash. No cambia el código de ACE-Step en disco. El LM 0.6B se carga expresamente cuando se selecciona ese perfil.

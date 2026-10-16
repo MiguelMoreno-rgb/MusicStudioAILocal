@@ -61,21 +61,10 @@ def run_checks(run):
     torch.manual_seed(40601)
     matrix = torch.randn(64, 64, device="cuda", dtype=torch.bfloat16)
     assert torch.isfinite(matrix @ matrix).all().item(), "Matmul CUDA no finita"
-    from torchao.quantization import Int8WeightOnlyConfig, quantize_
-    model = torch.nn.Sequential(torch.nn.Linear(64, 64, bias=False)).eval().to(dtype=torch.bfloat16)
-    # The same sequence as ACE-Step: CPU BF16 -> INT8 -> move to/from GPU.
-    quantize_(model, Int8WeightOnlyConfig())
-    if int8_layers(model) != 1:
-        raise RuntimeError("INT8 no se aplico realmente a la capa de prueba.")
-    with torch.inference_mode():
-        model.to("cuda")
-        actual = model(matrix)
-        if not torch.isfinite(actual).all().item():
-            raise RuntimeError("Forward INT8 no finito.")
-        model.to("cpu")
-        model.to("cuda")
-        if not torch.isfinite(model(matrix)).all().item():
-            raise RuntimeError("Fallo INT8 despues del offload CPU/GPU.")
+    from .int8_offload import exercise_int8_offload
+    # Match ACE-Step's actual offload path, including its AQT dispatch fallback.
+    # Raw Module.to() under inference_mode is not the transfer API of this commit.
+    int8_report = exercise_int8_offload("cuda", cycles=2)
     torch.cuda.synchronize()
     # Actual DLL/codec decode test using a local diagnostic sine, not generated music.
     import numpy as np
@@ -99,11 +88,11 @@ def run_checks(run):
     required = {"quantization", "offload_to_cpu", "offload_dit_to_cpu", "compile_model"}
     if not required.issubset(inspect.signature(AceStepHandler.initialize_service).parameters):
         raise RuntimeError("La API ACE-Step no coincide con el adaptador.")
-    del model, matrix, actual
+    del matrix
     torch.cuda.empty_cache()
     return dict(versions=versions, python=platform.python_version(), cuda=torch.version.cuda,
                 gpu=torch.cuda.get_device_name(0), gpu_inventory=nvidia_inventory(),
-                int8_forward_and_offload=True, codec_decode=True, mp3_export=True,
+                int8_forward_and_offload=True, int8_offload=int8_report, codec_decode=True, mp3_export=True,
                 source_commit=read_json(ROOT / "instalacion/bootstrap.lock.json")["source"]["commit"],
                 requirements_sha256=sha256(ROOT / "instalacion/requirements-windows.lock.txt"),
                 status="LOCAL_ENVIRONMENT_CHECKS_PASSED_NOT_MODEL_GENERATION")

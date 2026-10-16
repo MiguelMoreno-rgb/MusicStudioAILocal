@@ -4,6 +4,8 @@ Diagnóstico y scripts de instalación aislada para ACE-Step 1.5 Turbo en Window
 
 Configuración: DiT 2B Turbo, LM musical 0.6B opcional, backend PyTorch (`pt`), INT8 en el decoder elegible, offload CPU/DiT, batch 1 y 30 segundos. Con 16 GiB de RAM y 6.61 GiB libres, recomendamos probar primero **sin LM**, sin prometer que la carga quepa. El BAT ofrece esa opción expresamente.
 
+**Si ya instalaste los 57 paquetes y falló `model.to("cuda")` con `aten._has_compatible_shallow_copy_type`:** aplica la [corrección INT8 sin reinstalar](CORRECCION_INT8.md). Solo requiere copiar `musicstudio/validate.py` y el nuevo `musicstudio/int8_offload.py`, y volver a ejecutar `07_VALIDAR_ENTORNO.bat`. Mantén la descarga de modelos pendiente hasta revisar esa validación.
+
 ## Descargar todo como ZIP desde GitHub
 
 1. Abre [MiguelMoreno-rgb/MusicStudioAILocal](https://github.com/MiguelMoreno-rgb/MusicStudioAILocal).
