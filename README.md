@@ -16,6 +16,8 @@ Configuración: DiT 2B Turbo, LM musical 0.6B opcional, backend PyTorch (`pt`), 
 
 **Antes de autorizar otra generación tras la tercera prueba:** ejecuta [10_VALIDAR_QWEN_BF16.bat](10_VALIDAR_QWEN_BF16.bat) y sigue [VALIDAR_QWEN_BF16.md](VALIDAR_QWEN_BF16.md). Esta comprobación comparte el cargador de Qwen con producción, carga solo el checkpoint local en CPU/BF16, verifica dtype/dispositivo, mide RAM/RSS/memoria privada y no inicia el DiT, VAE ni generación.
 
+**Candidata integral tras la cuarta prueba:** [PIPELINE_POR_FASES.md](PIPELINE_POR_FASES.md) documenta la carga diferida y liberación de VAE, Qwen y DiT. [11_PRUEBA_POR_FASES.bat](11_PRUEBA_POR_FASES.bat) comprueba primero el stack con pesos aleatorios diminutos y después pide confirmación para una toma de 30 s sin LM. No reinstala paquetes ni descarga modelos. Es un perfil optativo pendiente de aceptación real en Windows; el actualizador lo recibirá cuando se autorice integrar la rama en `main`.
+
 ## Actualizar tu instalación existente sin ZIP
 
 Si ya tienes Python privado y los 57 paquetes, configura una sola vez la [actualización directa desde GitHub](ACTUALIZACIONES.md#primera-vez-un-comando-de-powershell): un comando de PowerShell descarga el configurador de un commit concreto, verifica SHA256 y pide revisión/confirmación antes de ejecutarlo. Funciona aunque la reparación de `.venv` siga pendiente.
@@ -88,6 +90,7 @@ Python se obtiene con uv privado y opciones `--no-bin --no-registry`, sin sustit
 | `08_REPARAR_TRASLADO.bat` | Reparar el traslado específico a Documentos conservando paquetes |
 | `09_VALIDAR_TELEMETRIA_WINDOWS.bat` | Pruebas nativas de E/S, sin modelos ni música |
 | `10_VALIDAR_QWEN_BF16.bat` | Carga aislada de Qwen local en CPU/BF16, sin música |
+| `11_PRUEBA_POR_FASES.bat` | Checks sintéticos nativos y toma optativa de 30 s con componentes por fases |
 | `REPARAR_TRASLADO.md` | Archivos a copiar, respaldo y riesgos de OneDrive |
 | `PLAN_ETAPA1.md` | Versiones exactas, riesgos y orden de instalación |
 | `instalacion/` y `musicstudio/` | Scripts y locks propios de integración |

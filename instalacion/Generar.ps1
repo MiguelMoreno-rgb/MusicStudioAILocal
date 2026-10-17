@@ -1,5 +1,5 @@
 #requires -Version 5.1
-param([switch]$SinLM)
+param([switch]$SinLM, [switch]$PorFases)
 . "$PSScriptRoot\Comun.ps1"
 try {
     Assert-PrivatePython
@@ -8,6 +8,14 @@ try {
     if ($hardware.RAMDisponibleGiB -lt 4 -or $hardware.VRAMLibreMiB -lt 4608) { throw 'Poco margen de memoria. No iniciar; cerrar aplicaciones manualmente y volver a comprobar.' }
     $useLM = -not $SinLM
     $experimental = $false
+    if ($PorFases) {
+        $useLM = $false
+        Write-Host 'CANDIDATA POR FASES: solo Turbo INT8/BF16, sin LM, 30 s, batch 1.'
+        Write-Host 'Primero se ejecutan pruebas con tensores diminutos y codecs; no se cargan pesos musicales.'
+        Write-Host 'Luego se pedira GENERAR antes de cargar los checkpoints y ejecutar una toma.'
+        Set-PrivateEnvironment
+        Invoke-Logged $PrivatePython @('-I','-B',$Runner,'phase-check') $null
+    }
     if ($useLM -and ($hardware.RAMDisponibleGiB -lt 8 -or $hardware.VRAMLibreMiB -lt 6144)) {
         Write-Host 'Margen reducido: recomendamos SIN LM. Esto cambia la configuracion seleccionada.'
         Write-Host '1 = Sin LM (recomendado); 2 = LM 0.6B experimental con riesgo de falta de memoria.'
@@ -42,7 +50,8 @@ try {
     if ($confirm -cne 'GENERAR') { throw 'Cancelado.' }
     Set-PrivateEnvironment
     $request = Join-Path $MusicRoot ('.state\solicitud-' + (Get-Date -Format 'yyyyMMdd-HHmmss-fff') + '.json')
-    @{ use_lm = [bool]$useLM; experimental_lm_confirmed = [bool]$experimental; seed = $seed; prompt = $prompt.Trim(); lyrics = $lyrics.Trim(); duration = 30; requested_profile = 'Turbo 2B INT8 offload batch 1' } | ConvertTo-Json | Set-Content -LiteralPath $request -Encoding UTF8
+    $memoryProfile = if ($PorFases) { 'phased_v1' } else { 'streaming_aqt_v1' }
+    @{ memory_profile = $memoryProfile; use_lm = [bool]$useLM; experimental_lm_confirmed = [bool]$experimental; seed = $seed; prompt = $prompt.Trim(); lyrics = $lyrics.Trim(); duration = 30; requested_profile = 'Turbo 2B INT8 offload batch 1' } | ConvertTo-Json | Set-Content -LiteralPath $request -Encoding UTF8
     Invoke-Logged $PrivatePython @('-I','-B',$Runner,'generate',$request) $null
     exit 0
 } catch { Write-Host $_.Exception.Message -ForegroundColor Red; exit 1 }

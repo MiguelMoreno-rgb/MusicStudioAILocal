@@ -14,7 +14,8 @@ if len(sys.argv) < 2:
     raise SystemExit("Falta accion.")
 action = sys.argv.pop(1)
 modules = {"bootstrap": "musicstudio.bootstrap", "validate": "musicstudio.validate", "models": "musicstudio.models",
-           "generate": "musicstudio.generate", "worker": "musicstudio.generate_worker"}
+           "generate": "musicstudio.generate", "worker": "musicstudio.generate_worker",
+           "phase-check": "musicstudio.phase_checks"}
 if action not in modules:
     raise SystemExit("Accion desconocida.")
 runpy.run_module(modules[action], run_name="__main__")

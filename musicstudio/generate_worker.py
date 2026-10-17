@@ -15,9 +15,11 @@ from .models import validate_configs, verify_models
 from .memory_trace import MemoryTrace
 from .streaming_offload import StreamingOffloadMixin
 from .text_encoder_memory import TextEncoderCPUOffloadMixin
+from .phased_pipeline import PhasedPipelineMixin, instrument_model_operations, validate_phase_request
 
 
 def perform(request, run, trace):
+    phased = validate_phase_request(request)
     trace.emit("worker.preparation", "begin")
     isolate()
     os.environ.update(HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1")
@@ -27,7 +29,6 @@ def perform(request, run, trace):
     import torch
     import soundfile as sf
     from acestep.handler import AceStepHandler
-    from acestep.llm_inference import LLMHandler
     from acestep.inference import GenerationParams, GenerationConfig, generate_music
     from .validate import EXPECTED, int8_layers
     import importlib.metadata
@@ -54,7 +55,12 @@ def perform(request, run, trace):
     torch.cuda.set_per_process_memory_fraction(budget / total, 0)
     torch.cuda.reset_peak_memory_stats(0)
 
-    class SmallModelHandler(StreamingOffloadMixin, TextEncoderCPUOffloadMixin, AceStepHandler):
+    class StreamingHandler(StreamingOffloadMixin, TextEncoderCPUOffloadMixin, AceStepHandler):
+        pass
+
+    handler_base = type("PhasedHandler", (PhasedPipelineMixin, StreamingHandler), {}) if phased else StreamingHandler
+
+    class SmallModelHandler(handler_base):
         def _ensure_models_present(self, *, checkpoint_path, config_path, prefer_source, vae_variant=None):
             # Upstream requires an unused LM 1.7B as part of "main". This integration
             # checks only the three core components, already hash-verified above.
@@ -68,26 +74,28 @@ def perform(request, run, trace):
 
     dit = SmallModelHandler()
     dit.memory_trace = trace
+    dit.phase_allocator_budget_bytes = int(budget)
     trace.emit("worker.preparation", "end")
     timings = {"preparacion_s": time.perf_counter() - started}
     init_start = time.perf_counter()
-    with trace.span("initialize.dit_vae_encoder"):
+    with trace.span("initialize.phase_registry" if phased else "initialize.dit_vae_encoder"):
         status, ok = dit.initialize_service(
             project_root=str(ROOT), config_path="acestep-v15-turbo", device="cuda",
             use_flash_attention=False, compile_model=False, quantization="int8_weight_only",
             offload_to_cpu=True, offload_dit_to_cpu=True, use_mlx_dit=False,
         )
-    print(status, flush=True)
+    print("Candidata preparada: solo metadatos/tokenizer/silence. Validacion INT8/CUDA pendiente de la fase DiT." if phased and ok else status, flush=True)
     if not ok:
         raise RuntimeError("No se pudo cargar DiT: " + status)
-    quantized = int8_layers(dit.model.decoder)
+    quantized = None if phased else int8_layers(dit.model.decoder)
     if dit.quantization != "int8_weight_only" or quantized == 0:
         raise RuntimeError("INT8 no esta efectivo: se detiene, sin fallback silencioso a BF16.")
     if dit.device != "cuda" or not dit.offload_to_cpu or not dit.offload_dit_to_cpu or dit.compiled:
         raise RuntimeError("La configuracion efectiva de GPU/offload/compilacion no coincide.")
-    timings["carga_dit_vae_encoder_s"] = time.perf_counter() - init_start
+    timings["registro_componentes_s" if phased else "carga_dit_vae_encoder_s"] = time.perf_counter() - init_start
     lm = None
     if use_lm:
+        from acestep.llm_inference import LLMHandler
         init_start = time.perf_counter()
         lm = LLMHandler()
         status, ok = lm.initialize(checkpoint_dir=str(CHECKPOINTS), lm_model_path="acestep-5Hz-lm-0.6B",
@@ -109,7 +117,7 @@ def perform(request, run, trace):
         checkpoint_config=checkpoint_config, code_commit=read_json(ROOT / "instalacion/bootstrap.lock.json")["source"]["commit"],
         model_revisions=[{"repo": m["repo"], "revision": m["revision"]} for m in read_json(ROOT / "instalacion/modelos.lock.json")["models"] if use_lm or not m["prefix"]],
         model_manifest_sha256=sha256(ROOT / "instalacion/modelos.lock.json"),
-        quantization_effective=dit.quantization, int8_linear_layers=quantized, dtype=str(dit.dtype),
+        quantization_effective=None if phased else dit.quantization, int8_linear_layers=quantized, dtype=str(dit.dtype),
         offload_to_cpu=dit.offload_to_cpu, offload_dit_to_cpu=dit.offload_dit_to_cpu,
         compiled=dit.compiled, lm_backend=lm.llm_backend if lm else None,
         pytorch_allocator_budget_bytes=int(budget), gpu=torch.cuda.get_device_name(0),
@@ -117,28 +125,38 @@ def perform(request, run, trace):
     )
     # Runtime wrappers only: source hashes remain unchanged. Record the two
     # distinct engine operations after load, without logging prompt/lyrics.
-    from functools import wraps
-    for method_name in ("prepare_condition", "generate_audio"):
-        original = getattr(dit.model, method_name)
-        def instrument(method, operation):
-            @wraps(method)
-            def measured(*args, **kwargs):
-                with trace.span(operation):
-                    return method(*args, **kwargs)
-            return measured
-        setattr(dit.model, method_name, instrument(original, "dit."+method_name))
-    effective["memory_transfer_strategy"] = "streaming_aqt_v1"
+    if not phased:
+        instrument_model_operations(dit.model, trace)
+    effective["memory_transfer_strategy"] = "phased_v1" if phased else "streaming_aqt_v1"
+    effective["quantization_validation_status"] = "pending_until_model_phase" if phased else "effective"
+    effective["integration_files_sha256"] = {name: sha256(ROOT / "musicstudio" / name) for name in (
+        "generate_worker.py", "phased_pipeline.py", "streaming_offload.py", "text_encoder_memory.py",
+    )}
     effective["memory_trace_schema"] = 1
     write_json(run / "configuracion.json", effective)
     generation_start = time.perf_counter()
-    with trace.span("inference"), torch.inference_mode():
-        result = generate_music(dit, lm, params, config, save_dir=str(run))
+    try:
+        with trace.span("inference"), torch.inference_mode():
+            result = generate_music(dit, lm, params, config, save_dir=str(run))
+    finally:
+        if phased:
+            write_json(run / "ciclo-componentes.json", dit.phase_report)
+            effective["phase_lifecycle"] = dit.phase_report
+            effective["int8_linear_layers"] = dit.phase_report.get("int8_linear_layers")
+            cuda_validated = dit.phase_report.get("dit_cuda_validated", False)
+            effective["quantization_validation_status"] = "effective_cuda" if cuda_validated else "not_validated_cuda"
+            effective["quantization_effective"] = dit.quantization if cuda_validated else None
+            write_json(run / "configuracion.json", effective)
     torch.cuda.synchronize()
     timings["generacion_total_s"] = time.perf_counter() - generation_start
     timings["etapas_motor"] = result.extra_outputs.get("time_costs", {})
     write_json(run / "motor-estado.json", dict(success=result.success, error=result.error, status_message=result.status_message))
     if not result.success or len(result.audios) != 1:
         raise RuntimeError(result.error or "El motor no devolvio exactamente una toma.")
+    if phased and (not dit.phase_report.get("int8_linear_layers") or not dit.phase_report["dit_cuda_validated"]
+                   or dit._phase_failed or not dit._phase_decode_completed
+                   or dit.phase_report["loads"] != dit.phase_report["releases"]):
+        raise RuntimeError("La candidata no completo/valido el ciclo INT8 por fases.")
     audio = result.audios[0]
     tensor = audio.get("tensor")
     if tensor is None or not torch.isfinite(tensor).all().item():
