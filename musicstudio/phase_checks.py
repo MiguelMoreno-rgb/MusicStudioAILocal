@@ -21,6 +21,7 @@ def main():
             report["environment_checks"] = run_checks(run)
             suite = unittest.defaultTestLoader.loadTestsFromNames([
                 "pruebas.test_phased_pipeline", "pruebas.test_phased_runtime",
+                "pruebas.test_vocal_conditioning", "pruebas.test_vocal_native",
             ])
             result = unittest.TextTestRunner(stream=log, verbosity=2).run(suite)
             report.update(tests_run=result.testsRun, failures=len(result.failures), errors=len(result.errors),

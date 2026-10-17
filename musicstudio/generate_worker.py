@@ -12,6 +12,7 @@ import traceback
 
 from .common import CHECKPOINTS, ROOT, enable_source, ffmpeg_bin, isolate, read_json, sha256, write_json
 from .models import validate_configs, verify_models
+from .vocal_conditioning import VocalConditioningMixin, make_generation_params, validate_vocal_request
 from .memory_trace import MemoryTrace
 from .streaming_offload import StreamingOffloadMixin
 from .text_encoder_memory import TextEncoderCPUOffloadMixin
@@ -20,6 +21,8 @@ from .phased_pipeline import PhasedPipelineMixin, instrument_model_operations, v
 
 def perform(request, run, trace):
     phased = validate_phase_request(request)
+    if phased:
+        validate_vocal_request(request)
     trace.emit("worker.preparation", "begin")
     isolate()
     os.environ.update(HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1")
@@ -58,7 +61,7 @@ def perform(request, run, trace):
     class StreamingHandler(StreamingOffloadMixin, TextEncoderCPUOffloadMixin, AceStepHandler):
         pass
 
-    handler_base = type("PhasedHandler", (PhasedPipelineMixin, StreamingHandler), {}) if phased else StreamingHandler
+    handler_base = type("PhasedHandler", (VocalConditioningMixin, PhasedPipelineMixin, StreamingHandler), {}) if phased else StreamingHandler
 
     class SmallModelHandler(handler_base):
         def _ensure_models_present(self, *, checkpoint_path, config_path, prefer_source, vae_variant=None):
@@ -73,6 +76,9 @@ def perform(request, run, trace):
             return None
 
     dit = SmallModelHandler()
+    dit.vocal_request = request
+    dit.vocal_report = {"schema": 1, "status": "pending", "vocal_presence": "PENDIENTE_DE_ESCUCHA"}
+    dit.vocal_report_path = run / "condicionamiento-vocal.json"
     dit.memory_trace = trace
     dit.phase_allocator_budget_bytes = int(budget)
     trace.emit("worker.preparation", "end")
@@ -104,12 +110,7 @@ def perform(request, run, trace):
         if not ok or lm.llm_backend != "pt" or lm.device != "cuda" or not lm.offload_to_cpu:
             raise RuntimeError("LM 0.6B no se inicializo con pt/offload. Usar 06_PRUEBA_SIN_LM.bat tras revisar el error.")
         timings["carga_lm_s"] = time.perf_counter() - init_start
-    params = GenerationParams(
-        task_type="text2music", caption=request["prompt"], lyrics=request["lyrics"],
-        instrumental=False, vocal_language="es", duration=30, bpm=90, timesignature="4",
-        inference_steps=8, seed=request["seed"], thinking=use_lm,
-        use_cot_metas=False, use_cot_caption=False, use_cot_lyrics=False, use_cot_language=False,
-    )
+    params = make_generation_params(GenerationParams, request, phased=phased)
     config = GenerationConfig(batch_size=1, allow_lm_batch=False, use_random_seed=False,
                               seeds=[request["seed"]], audio_format="wav")
     effective = dict(
@@ -130,7 +131,7 @@ def perform(request, run, trace):
     effective["memory_transfer_strategy"] = "phased_v1" if phased else "streaming_aqt_v1"
     effective["quantization_validation_status"] = "pending_until_model_phase" if phased else "effective"
     effective["integration_files_sha256"] = {name: sha256(ROOT / "musicstudio" / name) for name in (
-        "generate_worker.py", "phased_pipeline.py", "streaming_offload.py", "text_encoder_memory.py",
+        "generate_worker.py", "phased_pipeline.py", "streaming_offload.py", "text_encoder_memory.py", "vocal_conditioning.py",
     )}
     effective["memory_trace_schema"] = 1
     write_json(run / "configuracion.json", effective)
@@ -140,6 +141,9 @@ def perform(request, run, trace):
             result = generate_music(dit, lm, params, config, save_dir=str(run))
     finally:
         if phased:
+            if not dit.vocal_report_path.exists():
+                dit.vocal_report["status"] = "incomplete"
+                write_json(dit.vocal_report_path, dit.vocal_report)
             write_json(run / "ciclo-componentes.json", dit.phase_report)
             effective["phase_lifecycle"] = dit.phase_report
             effective["int8_linear_layers"] = dit.phase_report.get("int8_linear_layers")

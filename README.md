@@ -1,5 +1,7 @@
 # Music Studio AI Local
 
+**Candidata para investigar la ausencia de voz:** [diagnóstico y prueba vocal controlada](VOCES_CANDIDATA.md). Conserva el pipeline por fases, usa el schedule recomendado para Turbo y comprueba la ruta de letras hasta el sampler. Rama de desarrollo; voz y fidelidad a la letra pendientes de escucha local. No se integra en `main` automáticamente.
+
 Diagnóstico y scripts de instalación aislada para ACE-Step 1.5 Turbo en Windows con NVIDIA RTX 4060 Laptop de 8 GB. **Lee [PLAN_ETAPA1.md](PLAN_ETAPA1.md) antes de iniciar descargas.** La publicación de scripts no significa que ya se hayan instalado ni probado en tu laptop. No hay página web ni APIs de pago.
 
 Configuración: DiT 2B Turbo, LM musical 0.6B opcional, backend PyTorch (`pt`), INT8 en el decoder elegible, offload CPU/DiT, batch 1 y 30 segundos. Con 16 GiB de RAM y 6.61 GiB libres, recomendamos probar primero **sin LM**, sin prometer que la carga quepa. El BAT ofrece esa opción expresamente.

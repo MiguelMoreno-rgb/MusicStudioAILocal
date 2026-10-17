@@ -12,12 +12,14 @@ import time
 from .common import ROOT, STATE, isolate, new_run, nvidia_inventory, read_json, sha256, write_json
 from .memory_trace import LowMemoryGuard, last_event, sample_memory
 from .phased_pipeline import validate_phase_request
+from .vocal_conditioning import validate_vocal_request
 
 
 def supervise(request_path):
     import psutil
     request = read_json(request_path)
-    validate_phase_request(request)
+    if validate_phase_request(request):
+        validate_vocal_request(request)
     if not isinstance(request.get("seed"), int) or not 0 <= request["seed"] <= 2**32 - 1:
         raise ValueError("La semilla debe ser un entero de 0 a 4294967295.")
     if not isinstance(request.get("use_lm"), bool):
